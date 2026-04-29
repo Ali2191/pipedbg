@@ -1,0 +1,10 @@
+{
+  "device": "phone",
+  "timestamp": "2026-04-28T12:00:00",
+  "hsl": {
+    "emotion": "neutral",
+    "task": "idle"
+  },
+  "goals": [],
+  "l3_facts": []
+}

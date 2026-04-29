@@ -1,0 +1,104 @@
+{
+  "servers": {
+    "filesystem": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-filesystem", "${HOME}"],
+      "description": "Read/write local files and directories",
+      "env": {},
+      "requires_token": false,
+      "example_prompts": [
+        "list files in my downloads folder",
+        "read the file ~/Desktop/notes.txt",
+        "create a file called summary.md on my desktop"
+      ]
+    },
+    "github": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-github"],
+      "description": "GitHub repos, issues, PRs, code search",
+      "env": {"GITHUB_TOKEN": "${GITHUB_TOKEN}"},
+      "requires_token": true,
+      "example_prompts": [
+        "list my github repos",
+        "create an issue in jarvis repo called fix camera bug",
+        "show open PRs in my project",
+        "search my code for the speak function"
+      ]
+    },
+    "notion": {
+      "command": "npx",
+      "args": ["-y", "@notionhq/notion-mcp-server"],
+      "description": "Notion pages, databases, blocks",
+      "env": {"NOTION_API_KEY": "${NOTION_API_KEY}"},
+      "requires_token": true,
+      "example_prompts": [
+        "search my notion for JARVIS phase 12 notes",
+        "create a notion page called research summary",
+        "list all databases in my workspace"
+      ]
+    },
+    "slack": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-slack"],
+      "description": "Slack channels, messages, direct messages",
+      "env": {
+        "SLACK_BOT_TOKEN": "${SLACK_BOT_TOKEN}",
+        "SLACK_TEAM_ID":   "${SLACK_TEAM_ID}"
+      },
+      "requires_token": true,
+      "example_prompts": [
+        "send a slack message to general saying meeting in 5 minutes",
+        "list my slack channels",
+        "read unread messages in dev channel"
+      ]
+    },
+    "brave_search": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-brave-search"],
+      "description": "Brave web search — real-time results",
+      "env": {"BRAVE_API_KEY": "${BRAVE_API_KEY}"},
+      "requires_token": true,
+      "example_prompts": [
+        "search for latest AGI news",
+        "find research papers on catastrophic forgetting 2025",
+        "what happened in AI this week"
+      ]
+    },
+    "sqlite": {
+      "command": "uvx",
+      "args": ["mcp-server-sqlite", "--db-path", "./jarvis.db"],
+      "description": "SQLite database queries and operations",
+      "env": {},
+      "requires_token": false,
+      "example_prompts": [
+        "create a table called goals with columns title and deadline",
+        "insert a goal: finish JARVIS phase 14 by next week",
+        "list all my goals"
+      ]
+    },
+    "memory": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-memory"],
+      "description": "Persistent key-value memory across sessions",
+      "env": {},
+      "requires_token": false,
+      "example_prompts": [
+        "remember that my project deadline is May 15",
+        "what do you remember about my preferences",
+        "forget the old meeting time"
+      ]
+    },
+    "puppeteer": {
+      "command": "npx",
+      "args": ["-y", "@modelcontextprotocol/server-puppeteer"],
+      "description": "Full browser automation — navigate, click, screenshot",
+      "env": {},
+      "requires_token": false,
+      "example_prompts": [
+        "open github.com and take a screenshot",
+        "navigate to my project board and tell me the open issues",
+        "fill in the login form on this website"
+      ]
+    }
+  }
+}

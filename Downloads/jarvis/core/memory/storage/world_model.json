@@ -1,0 +1,89 @@
+{
+  "apps": {
+    "Claude": {
+      "uses": 0,
+      "last_used": "",
+      "category": "other"
+    },
+    "CleanMyKeyboard": {
+      "uses": 0,
+      "last_used": "",
+      "category": "other"
+    },
+    "Google Chrome": {
+      "uses": 0,
+      "last_used": "",
+      "category": "browser"
+    },
+    "Hotspot Shield": {
+      "uses": 0,
+      "last_used": "",
+      "category": "other"
+    },
+    "Ollama": {
+      "uses": 0,
+      "last_used": "",
+      "category": "other"
+    },
+    "Safari": {
+      "uses": 0,
+      "last_used": "",
+      "category": "browser"
+    },
+    "Spotify": {
+      "uses": 0,
+      "last_used": "",
+      "category": "media"
+    },
+    "Visual Studio Code": {
+      "uses": 0,
+      "last_used": "",
+      "category": "development"
+    },
+    "WhatsApp": {
+      "uses": 0,
+      "last_used": "",
+      "category": "communication"
+    },
+    "greet_face": {
+      "uses": 3,
+      "last_used": "2026-04-29T11:31:34.215119",
+      "category": "other"
+    },
+    "self_improve": {
+      "uses": 1,
+      "last_used": "2026-04-28T15:56:22.205750",
+      "category": "other"
+    },
+    "titan_recall": {
+      "uses": 1,
+      "last_used": "2026-04-28T15:57:10.268014",
+      "category": "other"
+    },
+    "Cursor": {
+      "uses": 0,
+      "last_used": "",
+      "category": "development"
+    },
+    "bluetooth": {
+      "uses": 1,
+      "last_used": "2026-04-29T11:32:07.307232",
+      "category": "other"
+    }
+  },
+  "projects": {
+    "/Users/tayyab/Projects/jarvis": {
+      "name": "jarvis",
+      "last_active": "2026-04-28T15:19:43.432818",
+      "language": "Python"
+    }
+  },
+  "files": {},
+  "schedule_pattern": {},
+  "network": {
+    "current": "You are not associated with an AirPort network.",
+    "home_ssid": "You are not associated with an AirPort network."
+  },
+  "app_cooccurrence": {},
+  "last_full_scan": "2026-04-29T11:31:01.498699"
+}

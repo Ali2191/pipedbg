@@ -1,0 +1,17 @@
+{
+  "Ali": {
+    "mentions": 3,
+    "sentiment": "positive",
+    "context": [
+      "Ali told me the build is great",
+      "Ali told me the build is great",
+      "Ali told me the build is great"
+    ],
+    "last_mentioned": "2026-04-27",
+    "sentiment_history": [
+      "positive",
+      "positive",
+      "positive"
+    ]
+  }
+}

@@ -1,0 +1,19 @@
+[
+  {
+    "plan_id": "a232c439",
+    "source_request": "ship phase 17",
+    "steps": [
+      {
+        "step_id": "s1",
+        "text": "step one",
+        "status": "todo"
+      },
+      {
+        "step_id": "s2",
+        "text": "step two",
+        "status": "todo"
+      }
+    ],
+    "created_at": "2026-04-27T18:33:00.009068"
+  }
+]

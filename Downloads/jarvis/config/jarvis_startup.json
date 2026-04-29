@@ -1,0 +1,5 @@
+{
+  "tts_backend": "edge",
+  "voice_persona": "jarvis",
+  "prosody_mode": "auto"
+}

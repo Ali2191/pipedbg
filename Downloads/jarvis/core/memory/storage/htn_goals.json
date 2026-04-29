@@ -1,0 +1,17 @@
+{
+  "goal_1777372812": {
+    "node_id": "goal_1777372812",
+    "title": "launching my portfolio site",
+    "description": "plan for launching my portfolio site",
+    "level": 0,
+    "parent_id": null,
+    "children": [],
+    "status": "active",
+    "progress": 0.0,
+    "deadline": "",
+    "created_at": "2026-04-28T15:40:12.217228",
+    "completed_at": "",
+    "is_atomic": false,
+    "execute_cmd": ""
+  }
+}
