@@ -1,0 +1,41 @@
+[build-system]
+requires = ["setuptools>=68", "wheel"]
+build-backend = "setuptools.backends.legacy:build"
+
+[project]
+name = "pipedbg"
+version = "0.1.0"
+description = "Debug CI/CD pipelines locally — breakpoints, live logs, AI failure explanations"
+readme = "README.md"
+requires-python = ">=3.11"
+license = { text = "MIT" }
+keywords = ["ci", "cd", "github-actions", "devtools", "debugging", "pipeline"]
+classifiers = [
+    "Development Status :: 3 - Alpha",
+    "Environment :: Console",
+    "Intended Audience :: Developers",
+    "Topic :: Software Development :: Build Tools",
+    "Programming Language :: Python :: 3.11",
+    "Programming Language :: Python :: 3.12",
+]
+dependencies = [
+    "click>=8.1",
+    "rich>=13.0",
+    "pyyaml>=6.0",
+    "networkx>=3.0",
+    "docker>=7.0",          # Docker SDK for Python
+    "anthropic>=0.25",      # AI failure explanations (Phase 2)
+]
+
+[project.optional-dependencies]
+dev = [
+    "pytest>=8.0",
+    "pytest-cov",
+]
+
+[project.scripts]
+pipedbg = "pipedbg.cli:main"
+
+[tool.setuptools.packages.find]
+where = ["."]
+include = ["pipedbg*"]

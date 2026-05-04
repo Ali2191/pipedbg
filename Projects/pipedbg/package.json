@@ -1,0 +1,72 @@
+{
+  "name": "pipedbg",
+  "version": "3.0.0",
+  "description": "Visual debugger for CI/CD pipelines",
+  "main": "electron/main.js",
+  "homepage": "./",
+  "author": "pipedbg contributors",
+  "license": "MIT",
+  "scripts": {
+    "start": "electron .",
+    "dev": "cross-env NODE_ENV=development electron .",
+    "build": "electron-builder",
+    "build:mac": "electron-builder --mac",
+    "build:win": "electron-builder --win",
+    "build:linux": "electron-builder --linux",
+    "build:all": "electron-builder -mwl",
+    "dist": "npm run build"
+  },
+  "devDependencies": {
+    "electron": "^latest",
+    "electron-builder": "^24.9.1",
+    "cross-env": "^7.0.3"
+  },
+  "build": {
+    "appId": "com.pipedbg.app",
+    "productName": "pipedbg",
+    "directories": {
+      "buildResources": "assets"
+    },
+    "mac": {
+      "target": [
+        "dmg",
+        "zip"
+      ],
+      "icon": "assets/icon.icns",
+      "category": "public.app-category.developer-tools"
+    },
+    "dmg": {
+      "contents": [
+        {
+          "x": 130,
+          "y": 220
+        },
+        {
+          "x": 410,
+          "y": 220,
+          "type": "link",
+          "path": "/Applications"
+        }
+      ]
+    },
+    "win": {
+      "target": [
+        "nsis",
+        "portable"
+      ],
+      "icon": "assets/icon.ico"
+    },
+    "nsis": {
+      "oneClick": false,
+      "allowToChangeInstallationDirectory": true
+    },
+    "linux": {
+      "target": [
+        "AppImage",
+        "deb"
+      ],
+      "icon": "assets/icon.png",
+      "category": "Development"
+    }
+  }
+}
