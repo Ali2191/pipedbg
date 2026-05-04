@@ -27,6 +27,3 @@ python -m pipedbg.cli ui python-ci.yml
 ```
 
 Open the printed URL in multiple browsers to collaborate on the same debug session.
-
-
-# pipedbg
