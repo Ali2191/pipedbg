@@ -28,7 +28,5 @@ python -m pipedbg.cli ui python-ci.yml
 
 Open the printed URL in multiple browsers to collaborate on the same debug session.
 
-Local plan gate:
-- Free tier: limited AI explain calls in UI
-- Team tier: unlimited AI explain calls (create a file named `.pipedbg-team` in repo root)
+
 # pipedbg
