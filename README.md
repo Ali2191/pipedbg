@@ -1,5 +1,7 @@
 # pipedbg
 
+![pipedbg demo](https://raw.githubusercontent.com/Ali2191/pipedbg/main/demo.gif)
+
 Debug CI/CD pipelines locally with breakpoints, live logs, and an optional web UI.
 
 ## Features
