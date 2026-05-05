@@ -1,0 +1,29 @@
+stages:
+  - build
+  - test
+
+variables:
+  PIPEDBG_ENV: test
+
+before_script:
+  - echo "Global setup"
+
+after_script:
+  - echo "Global cleanup"
+
+build:
+  stage: build
+  image: python:3.11
+  script:
+    - echo "Building..."
+
+unit_tests:
+  stage: test
+  image: python:3.11
+  needs: [build]
+  script:
+    - echo "Running tests" # breakpoint
+    - pytest -q
+  rules:
+    - if: $CI_COMMIT_BRANCH == "main"
+      when: on_success

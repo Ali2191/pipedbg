@@ -1,0 +1,1 @@
+export default function DashboardLayout({ children }: { children: React.ReactNode }) { return <div className="min-h-screen grid grid-cols-[240px_1fr]"><aside className="border-r p-4">QuoteFast</aside><main className="p-6">{children}</main></div>; }

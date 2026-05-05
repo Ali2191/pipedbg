@@ -25,12 +25,19 @@ dependencies = [
     "networkx>=3.0",
     "docker>=7.0",          # Docker SDK for Python
     "anthropic>=0.25",      # AI failure explanations (Phase 2)
+    "fastapi>=0.110",
+    "uvicorn>=0.29",
+    "pyngrok>=7.0",
+    "PyJWT>=2.8",
+    "cryptography>=42.0",
 ]
 
 [project.optional-dependencies]
 dev = [
     "pytest>=8.0",
     "pytest-cov",
+    "pytest-asyncio>=0.23",
+    "httpx>=0.27",
 ]
 
 [project.scripts]

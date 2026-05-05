@@ -18,6 +18,7 @@ import shlex
 import subprocess
 import sys
 import time
+import threading
 from dataclasses import dataclass, field
 from enum import Enum, auto
 from pathlib import Path
@@ -25,7 +26,7 @@ from typing import Callable
 
 from rich.console import Console
 
-from .parser import Job, Step, Workflow
+from .parsers.base import Job, Step, Workflow
 
 console = Console()
 
@@ -303,6 +304,11 @@ def execute_step(
     container: ContainerSession | None,
     dry_run: bool = False,
     force_breakpoints: list[str] | None = None,
+    event_sink: Callable[[dict], None] | None = None,
+    job_id: str | None = None,
+    step_index: int | None = None,
+    cancel_event: Callable[[], bool] | None = None,
+    breakpoint_handler: Callable[[str, int, str], str] | None = None,
 ) -> StepResult:
     """
     Execute a single step. Returns StepResult.
@@ -319,6 +325,24 @@ def execute_step(
 
     def log(line: str):
         logs.append(line)
+        if event_sink and job_id is not None and step_index is not None:
+            event_sink({
+                "type": "log",
+                "job_id": job_id,
+                "step_index": step_index,
+                "line": line,
+            })
+
+    if cancel_event and cancel_event():
+        return StepResult(step=step, status=StepStatus.SKIPPED, logs=logs)
+
+    if event_sink and job_id is not None and step_index is not None:
+        event_sink({
+            "type": "step_start",
+            "job_id": job_id,
+            "step_index": step_index,
+            "step_name": step.display_name(),
+        })
 
     # Handle action steps (uses:) — just log them, don't execute
     if step.uses:
@@ -326,33 +350,84 @@ def execute_step(
         if step.with_inputs:
             for k, v in step.with_inputs.items():
                 log(f"  with.{k}: {v}")
-        return StepResult(
+        result = StepResult(
             step=step,
             status=StepStatus.SUCCESS,
             exit_code=0,
             logs=logs,
             duration_seconds=time.time() - start,
         )
+        if event_sink and job_id is not None and step_index is not None:
+            event_sink({
+                "type": "step_end",
+                "job_id": job_id,
+                "step_index": step_index,
+                "status": result.status.name,
+                "duration": result.duration_seconds,
+                "exit_code": result.exit_code,
+            })
+        return result
 
     if not step.run:
-        return StepResult(step=step, status=StepStatus.SKIPPED, logs=logs,
-                          duration_seconds=time.time() - start)
+        result = StepResult(step=step, status=StepStatus.SKIPPED, logs=logs,
+                            duration_seconds=time.time() - start)
+        if event_sink and job_id is not None and step_index is not None:
+            event_sink({
+                "type": "step_end",
+                "job_id": job_id,
+                "step_index": step_index,
+                "status": result.status.name,
+                "duration": result.duration_seconds,
+                "exit_code": result.exit_code,
+            })
+        return result
 
     if dry_run:
         for line in step.run.strip().splitlines():
             log(f"[dry-run] {line}")
-        return StepResult(step=step, status=StepStatus.SUCCESS, logs=logs,
-                          duration_seconds=time.time() - start)
+        result = StepResult(step=step, status=StepStatus.SUCCESS, logs=logs,
+                            duration_seconds=time.time() - start)
+        if event_sink and job_id is not None and step_index is not None:
+            event_sink({
+                "type": "step_end",
+                "job_id": job_id,
+                "step_index": step_index,
+                "status": result.status.name,
+                "duration": result.duration_seconds,
+                "exit_code": result.exit_code,
+            })
+        return result
 
     cwd = str(repo_path / (step.working_directory or ""))
     step_env = {**env, **step.env}
 
     # Trigger breakpoint BEFORE step executes
     if should_break:
-        if container and container.container_id:
-            open_breakpoint_shell(container.container_id, step, step_env, cwd)
+        if breakpoint_handler and job_id is not None and step_index is not None:
+            action = breakpoint_handler(job_id, step_index, step.display_name())
+            if action == "skip":
+                result = StepResult(
+                    step=step,
+                    status=StepStatus.SKIPPED,
+                    exit_code=0,
+                    logs=logs,
+                    duration_seconds=time.time() - start,
+                )
+                if event_sink:
+                    event_sink({
+                        "type": "step_end",
+                        "job_id": job_id,
+                        "step_index": step_index,
+                        "status": result.status.name,
+                        "duration": result.duration_seconds,
+                        "exit_code": result.exit_code,
+                    })
+                return result
         else:
-            open_breakpoint_shell_local(step, step_env, cwd)
+            if container and container.container_id:
+                open_breakpoint_shell(container.container_id, step, step_env, cwd)
+            else:
+                open_breakpoint_shell_local(step, step_env, cwd)
 
     exit_code = 0
     if container and container.container_id:
@@ -375,8 +450,18 @@ def execute_step(
 
     duration = time.time() - start
     status = StepStatus.SUCCESS if exit_code == 0 else StepStatus.FAILED
-    return StepResult(step=step, status=status, exit_code=exit_code,
-                      logs=logs, duration_seconds=duration)
+    result = StepResult(step=step, status=status, exit_code=exit_code,
+                        logs=logs, duration_seconds=duration)
+    if event_sink and job_id is not None and step_index is not None:
+        event_sink({
+            "type": "step_end",
+            "job_id": job_id,
+            "step_index": step_index,
+            "status": result.status.name,
+            "duration": result.duration_seconds,
+            "exit_code": result.exit_code,
+        })
+    return result
 
 
 # ─────────────────────────────────────────
@@ -391,6 +476,9 @@ def run_job(
     dry_run: bool = False,
     force_breakpoints: list[str] | None = None,
     use_docker: bool = True,
+    event_sink: Callable[[dict], None] | None = None,
+    cancel_event: threading.Event | None = None,
+    breakpoint_handler: Callable[[str, int, str], str] | None = None,
 ) -> JobResult:
     start = time.time()
     step_results: list[StepResult] = []
@@ -404,7 +492,9 @@ def run_job(
     image = resolve_image(job.runs_on)
 
     def _run_steps(container: ContainerSession | None):
-        for step in job.steps:
+        for idx, step in enumerate(job.steps):
+            if cancel_event and cancel_event.is_set():
+                break
             step_env = merge_env(base_env, {}, step.env, secrets)
             result = execute_step(
                 step=step,
@@ -413,10 +503,18 @@ def run_job(
                 container=container,
                 dry_run=dry_run,
                 force_breakpoints=force_breakpoints,
+                event_sink=event_sink,
+                job_id=job.id,
+                step_index=idx,
+                cancel_event=cancel_event.is_set if cancel_event else None,
+                breakpoint_handler=breakpoint_handler,
             )
             step_results.append(result)
             if result.status == StepStatus.FAILED:
                 break  # fail-fast (matches GitHub Actions default)
+
+    if event_sink:
+        event_sink({"type": "job_start", "job_id": job.id, "job_name": job.name})
 
     if use_docker:
         with ContainerSession(image, base_env, repo_path) as container:
@@ -434,22 +532,19 @@ def run_job(
     elif not step_results:
         job_status = JobStatus.SKIPPED
 
-    return JobResult(
+    result = JobResult(
         job=job,
         status=job_status,
         step_results=step_results,
         duration_seconds=duration,
     )
 
-    final_status = (
-        JobStatus.FAILED
-        if any(r.status == StepStatus.FAILED for r in step_results)
-        else JobStatus.SUCCESS
-    )
+    if event_sink:
+        event_sink({
+            "type": "job_end",
+            "job_id": job.id,
+            "status": result.status.name,
+            "duration": result.duration_seconds,
+        })
 
-    return JobResult(
-        job=job,
-        status=final_status,
-        step_results=step_results,
-        duration_seconds=time.time() - start,
-    )
+    return result

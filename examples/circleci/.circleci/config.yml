@@ -1,0 +1,18 @@
+version: 2.1
+
+jobs:
+  build:
+    docker:
+      - image: cimg/python:3.11
+    steps:
+      - checkout
+      - run:
+          name: Run tests
+          command: |
+            echo "Testing..." # breakpoint
+            pytest -q
+
+workflows:
+  build_and_test:
+    jobs:
+      - build

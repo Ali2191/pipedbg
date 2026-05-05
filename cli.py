@@ -1,38 +1,21 @@
 """
-pipedbg — CI/CD local debugger
-================================
-Run, debug, and inspect your GitHub Actions pipelines locally.
-
-Commands
---------
-  run       Execute a workflow (or specific jobs) locally
-  inspect   Parse and visualize a workflow file structure
-  list      List all workflows found in the repo
-  validate  Validate workflow YAML without running it
-
-Usage
------
-  pipedbg run .github/workflows/ci.yml
-  pipedbg run .github/workflows/ci.yml --job build --dry-run
-  pipedbg run .github/workflows/ci.yml --break-on "Run tests"
-  pipedbg inspect .github/workflows/ci.yml
-  pipedbg list
-    pipedbg validate .github/workflows/ci.yml
-    pipedbg demo-ai
-    pipedbg ui .github/workflows/ci.yml
+pipedbg CLI
+===========
+Run, inspect, and debug CI/CD workflows locally.
 """
-
 from __future__ import annotations
 
+import json
 import sys
-import time
 import tempfile
-from types import SimpleNamespace
+import threading
+import time
+import urllib.request
+from datetime import datetime
 from pathlib import Path
 
 import click
 from rich.console import Console
-from rich.text import Text
 
 from .display import (
     console,
@@ -45,15 +28,22 @@ from .display import (
 from .parser import WorkflowParseError, find_workflows, parse_pipeline
 from .runner import JobStatus, StepStatus, load_secrets, run_job
 from . import ai
-from .webui import run_ui_server
+from .auth import (
+    LicenseError,
+    ProFeatureError,
+    UsageLimitError,
+    check_ai_limit,
+    get_license,
+    is_pro,
+    render_pro_message,
+    save_license,
+)
+from .auth.limits import record_audit_log
+from .auth.gate import require_pro
+from .web.server import run_ui_server
 
 
 def _infer_repo_path(workflow_file: Path) -> Path:
-    """Infer a reasonable repository root from the workflow path.
-
-    - If workflow is under `.github/workflows/`, return the repo root.
-    - Otherwise, use the workflow file's parent directory.
-    """
     parts = workflow_file.parts
     if ".github" in parts and "workflows" in parts:
         try:
@@ -63,54 +53,47 @@ def _infer_repo_path(workflow_file: Path) -> Path:
             pass
     return workflow_file.parent
 
-# ─────────────────────────────────────────
-# CLI group
-# ─────────────────────────────────────────
+
+def _wait_for_server(host: str, port: int, timeout: float = 10.0) -> dict:
+    url = f"http://{host}:{port}/api/session"
+    start = time.time()
+    while time.time() - start < timeout:
+        try:
+            with urllib.request.urlopen(url, timeout=2) as resp:
+                if resp.status == 200:
+                    return json.loads(resp.read().decode("utf-8"))
+        except Exception:
+            time.sleep(0.3)
+    raise RuntimeError("UI server did not start in time.")
+
+
+def _post_json(url: str, payload: dict) -> dict:
+    data = json.dumps(payload).encode("utf-8")
+    req = urllib.request.Request(url, data=data, headers={"Content-Type": "application/json"})
+    with urllib.request.urlopen(req, timeout=5) as resp:
+        return json.loads(resp.read().decode("utf-8"))
+
 
 @click.group()
-@click.version_option("0.1.0", prog_name="pipedbg")
-def cli():
+@click.version_option("0.2.0", prog_name="pipedbg")
+def cli() -> None:
     """pipedbg — debug CI/CD pipelines locally."""
 
 
-# ─────────────────────────────────────────
-# run
-# ─────────────────────────────────────────
-
 @cli.command()
 @click.argument("workflow_file", type=click.Path(exists=True, path_type=Path))
-@click.option(
-    "--job", "-j", "jobs", multiple=True,
-    help="Run only specific job(s). Can be specified multiple times.",
-)
-@click.option(
-    "--dry-run", is_flag=True,
-    help="Parse and print commands without executing them.",
-)
-@click.option(
-    "--break-on", "-b", "break_on", multiple=True,
-    help="Force a breakpoint on a step by name or ID. Can be specified multiple times.",
-)
-@click.option(
-    "--env-file", "-e", type=click.Path(path_type=Path), default=None,
-    help="Path to a .env file containing secrets (default: .env in current dir).",
-)
-@click.option(
-    "--no-docker", is_flag=True,
-    help="Run steps directly on the host instead of inside Docker containers.",
-)
-@click.option(
-    "--verbose", "-v", is_flag=True,
-    help="Show full step logs (default: truncated to 6 lines).",
-)
-@click.option(
-    "--apply-ai-fix", is_flag=True,
-    help="If AI suggests YAML changes, offer to apply them in-place with a backup copy.",
-)
-@click.option(
-    "--repo", type=click.Path(path_type=Path), default=None,
-    help="Path to the repository root (default: current directory).",
-)
+@click.option("--job", "jobs", multiple=True, help="Run only specific job(s).")
+@click.option("--dry-run", is_flag=True, help="Parse and print commands without executing.")
+@click.option("--break-on", "break_on", multiple=True, help="Force a breakpoint by name or ID.")
+@click.option("--env-file", type=click.Path(path_type=Path), default=None, help="Path to a .env file.")
+@click.option("--no-docker", is_flag=True, help="Run on host instead of Docker.")
+@click.option("--verbose", is_flag=True, help="Show full step logs.")
+@click.option("--apply-ai-fix", is_flag=True, help="Offer to apply AI YAML changes.")
+@click.option("--repo", type=click.Path(path_type=Path), default=None, help="Repository root.")
+@click.option("--ui", is_flag=True, help="Open the web UI and stream this run.")
+@click.option("--notify", type=str, default=None, help="Webhook URL to notify on pass/fail (Pro).")
+@click.option("--ui-host", default="127.0.0.1", show_default=True)
+@click.option("--ui-port", default=7337, show_default=True, type=int)
 def run(
     workflow_file: Path,
     jobs: tuple[str, ...],
@@ -121,32 +104,53 @@ def run(
     verbose: bool,
     apply_ai_fix: bool,
     repo: Path | None,
-):
-    """Run a workflow file locally.
-
-    \b
-    Examples:
-      pipedbg run .github/workflows/ci.yml
-      pipedbg run ci.yml --job build --job test
-      pipedbg run ci.yml --break-on "Run tests" --env-file .secrets
-      pipedbg run ci.yml --dry-run
-    """
+    ui: bool,
+    notify: str | None,
+    ui_host: str,
+    ui_port: int,
+) -> None:
+    """Run a workflow file locally."""
     repo_path = repo or _infer_repo_path(workflow_file)
 
-    # ── Parse ──
+    if ui:
+        thread = threading.Thread(
+            target=run_ui_server,
+            kwargs={
+                "workflow_path": workflow_file,
+                "repo_path": repo_path,
+                "host": ui_host,
+                "port": ui_port,
+                "open_browser": True,
+                "share": False,
+            },
+            daemon=True,
+        )
+        thread.start()
+        session = _wait_for_server(ui_host, ui_port)
+        _post_json(f"http://{ui_host}:{ui_port}/api/run", {
+            "session_id": session.get("session_id"),
+            "workflow": str(workflow_file),
+            "dry_run": dry_run,
+            "env_file": str(env_file) if env_file else None,
+        })
+        console.print("[green]UI server running. Press Ctrl+C to stop.[/green]")
+        try:
+            thread.join()
+        except KeyboardInterrupt:
+            console.print("\n[dim]UI server stopped.[/dim]")
+        return
+
     try:
         workflow = parse_pipeline(workflow_file)
-    except (WorkflowParseError, FileNotFoundError) as e:
+    except (WorkflowParseError, FileNotFoundError, ProFeatureError) as e:
         console.print(f"[red bold]Parse error:[/red bold] {e}")
         sys.exit(1)
 
-    # ── Secrets ──
     env_file = env_file or (repo_path / ".env")
     secrets = load_secrets(env_file)
     if secrets:
         console.print(f"[dim]Loaded {len(secrets)} secret(s) from {env_file}[/dim]")
 
-    # ── Header ──
     mode_tags = []
     if dry_run:
         mode_tags.append("[yellow]dry-run[/yellow]")
@@ -163,7 +167,6 @@ def run(
     print_workflow_header(workflow)
     print_breakpoints_found(workflow)
 
-    # ── Job selection ──
     try:
         execution_order = workflow.execution_order()
     except WorkflowParseError as e:
@@ -177,17 +180,14 @@ def run(
         console.print(f"Available: {', '.join(workflow.jobs.keys())}")
         sys.exit(1)
 
-    # Filter to selected, preserving topological order
     run_order = [j for j in execution_order if j in selected_jobs]
 
-    # ── Execute ──
     all_results = []
     total_start = time.time()
     pipeline_failed = False
 
     for job_id in run_order:
         job = workflow.jobs[job_id]
-
         if pipeline_failed:
             console.print(f"[dim]Skipping job `{job.name}` (upstream failure)[/dim]")
             continue
@@ -210,8 +210,8 @@ def run(
             pipeline_failed = True
             if result.failed_step:
                 print_failure_panel(result.failed_step)
-                # Phase 2: AI explain the failure and optionally apply a YAML fix
                 try:
+                    check_ai_limit()
                     ai_resp = ai.explain_failure(result.failed_step)
                     console.print("\n[bold]AI explanation:[/bold]\n")
                     console.print(ai_resp.get("explanation", "(no explanation)"))
@@ -232,11 +232,25 @@ def run(
                             console.print("\n[dim]Skipped applying AI changes.[/dim]")
                         else:
                             console.print("\n[dim]Run with --apply-ai-fix to prompt for in-place application.[/dim]")
+                except UsageLimitError:
+                    console.print(render_pro_message("AI explanations"))
                 except Exception as e:
                     console.print(f"[dim]AI explain failed: {e}[/dim]")
 
-    # ── Summary ──
     print_summary(all_results, time.time() - total_start)
+
+    if notify and not is_pro():
+        raise ProFeatureError("notifications")
+    if notify:
+        status = "failed" if pipeline_failed else "passed"
+        _post_json(notify, {"status": status, "workflow": workflow.name})
+
+    if is_pro():
+        record_audit_log({
+            "timestamp": datetime.utcnow().isoformat(timespec="seconds") + "Z",
+            "workflow": workflow.name,
+            "status": "failed" if pipeline_failed else "passed",
+        })
 
     if pipeline_failed:
         console.print(
@@ -246,24 +260,42 @@ def run(
         sys.exit(1)
 
 
-# ─────────────────────────────────────────
-# inspect
-# ─────────────────────────────────────────
-
 @cli.command()
 @click.argument("workflow_file", type=click.Path(exists=True, path_type=Path))
-def inspect(workflow_file: Path):
-    """Parse and display the structure of a workflow file.
-
-    \b
-    Example:
-      pipedbg inspect .github/workflows/ci.yml
-    """
+@click.option("--json", "as_json", is_flag=True, help="Output JSON for tooling.")
+def inspect(workflow_file: Path, as_json: bool) -> None:
+    """Parse and display the structure of a workflow file."""
     try:
         workflow = parse_pipeline(workflow_file)
-    except (WorkflowParseError, FileNotFoundError) as e:
+    except (WorkflowParseError, FileNotFoundError, ProFeatureError) as e:
         console.print(f"[red bold]Parse error:[/red bold] {e}")
         sys.exit(1)
+
+    if as_json:
+        payload = {
+            "name": workflow.name,
+            "platform": workflow.platform,
+            "jobs": {
+                job_id: {
+                    "id": job.id,
+                    "name": job.name,
+                    "needs": job.needs,
+                    "steps": [
+                        {
+                            "id": step.id,
+                            "name": step.display_name(),
+                            "run": step.run,
+                            "uses": step.uses,
+                            "breakpoint": step.breakpoint,
+                        }
+                        for step in job.steps
+                    ],
+                }
+                for job_id, job in workflow.jobs.items()
+            },
+        }
+        click.echo(json.dumps(payload))
+        return
 
     console.print()
     console.print(f"[bold]{workflow.name}[/bold]  [dim]{workflow_file}[/dim]")
@@ -278,7 +310,6 @@ def inspect(workflow_file: Path):
     print_workflow_header(workflow)
     print_breakpoints_found(workflow)
 
-    # Execution order
     try:
         order = workflow.execution_order()
         levels = workflow.job_levels()
@@ -287,11 +318,9 @@ def inspect(workflow_file: Path):
     except WorkflowParseError as e:
         console.print(f"[red]Dependency error: {e}[/red]")
 
-    # Stats
     total_steps = sum(len(j.steps) for j in workflow.jobs.values())
     bp_count = sum(
-        1 for j in workflow.jobs.values()
-        for s in j.steps if s.breakpoint
+        1 for j in workflow.jobs.values() for s in j.steps if s.breakpoint
     )
     console.print(
         f"\n[dim]Jobs: {len(workflow.jobs)}  "
@@ -301,28 +330,14 @@ def inspect(workflow_file: Path):
     console.print()
 
 
-# ─────────────────────────────────────────
-# list
-# ─────────────────────────────────────────
-
 @cli.command(name="list")
-@click.option(
-    "--repo", type=click.Path(path_type=Path), default=None,
-    help="Repository root (default: current directory).",
-)
-def list_workflows(repo: Path | None):
-    """List all workflow files found in .github/workflows/.
-
-    \b
-    Example:
-      pipedbg list
-      pipedbg list --repo /path/to/repo
-    """
+@click.option("--repo", type=click.Path(path_type=Path), default=None, help="Repository root.")
+def list_workflows(repo: Path | None) -> None:
     repo_path = repo or Path.cwd()
     paths = find_workflows(repo_path)
 
     if not paths:
-        console.print(f"[dim]No workflow files found in {repo_path / '.github' / 'workflows'}[/dim]")
+        console.print(f"[dim]No workflow files found in {repo_path}[/dim]")
         return
 
     console.print()
@@ -339,32 +354,16 @@ def list_workflows(repo: Path | None):
             console.print(f"[red]{path.name}[/red]  [dim](parse error: {e})[/dim]\n")
 
 
-# ─────────────────────────────────────────
-# validate
-# ─────────────────────────────────────────
-
 @cli.command()
 @click.argument("workflow_file", type=click.Path(path_type=Path))
-def validate(workflow_file: Path):
-    """Validate a workflow YAML file without running it.
-
-    \b
-    Checks:
-      - Valid YAML syntax
-      - Required fields (jobs, steps, runs-on)
-      - Dependency graph (no circular needs:)
-      - Unknown job references in needs:
-
-    Example:
-      pipedbg validate .github/workflows/ci.yml
-    """
+def validate(workflow_file: Path) -> None:
     if not workflow_file.exists():
         console.print(f"[red bold]File not found:[/red bold] {workflow_file}")
         sys.exit(1)
 
     try:
         workflow = parse_pipeline(workflow_file)
-        _ = workflow.execution_order()  # triggers cycle detection
+        _ = workflow.execution_order()
         console.print(f"[green bold]✓[/green bold] {workflow_file.name} is valid")
         console.print(
             f"  [dim]Jobs: {len(workflow.jobs)}  "
@@ -378,18 +377,10 @@ def validate(workflow_file: Path):
         sys.exit(1)
 
 
-# ─────────────────────────────────────────
-# demo-ai
-# ─────────────────────────────────────────
-
 @cli.command(name="demo-ai")
-@click.option(
-    "--apply-fix", is_flag=True,
-    help="Apply the demo AI change to the temporary workflow file and show the backup path.",
-)
-def demo_ai(apply_fix: bool):
-    """Run a fake Anthropic-backed AI explanation demo without an API key."""
-    from .parser import Step
+@click.option("--apply-fix", is_flag=True, help="Apply the demo AI change to the temp file.")
+def demo_ai(apply_fix: bool) -> None:
+    from .parsers.base import Step
     from .runner import StepResult
 
     with tempfile.TemporaryDirectory() as tmpdir:
@@ -417,44 +408,16 @@ def demo_ai(apply_fix: bool):
                         '"suggestion":"Install pytest before running tests.",'
                         '"changes":[{"find":"- run: pytest","replace":"- run: pip install pytest && pytest"}]}'
                     )
-                    return SimpleNamespace(content=[SimpleNamespace(text=payload)])
+                    return type("Resp", (), {"content": [type("Item", (), {"text": payload})()]})()
 
         original_anthropic = ai.anthropic
-        ai.anthropic = SimpleNamespace(Anthropic=lambda api_key: FakeAnthropicClient())
+        ai.anthropic = type("Anth", (), {"Anthropic": lambda api_key: FakeAnthropicClient()})()
         try:
             response = ai.explain_failure(demo_result)
         finally:
             ai.anthropic = original_anthropic
 
         console.print()
-
-
-# ─────────────────────────────────────────
-# ui
-# ─────────────────────────────────────────
-
-@cli.command(name="ui")
-@click.argument("workflow_file", type=click.Path(exists=True, path_type=Path))
-@click.option("--repo", type=click.Path(path_type=Path), default=None, help="Repository root.")
-@click.option("--host", default="127.0.0.1", show_default=True, help="Host for local UI server.")
-@click.option("--port", default=8765, show_default=True, type=int, help="Port for local UI server.")
-@click.option("--no-open", is_flag=True, help="Do not open a browser automatically.")
-def ui(workflow_file: Path, repo: Path | None, host: str, port: int, no_open: bool):
-    """Launch the local Phase 3 web UI for DAG + breakpoints + timeline."""
-    repo_path = repo or _infer_repo_path(workflow_file)
-    try:
-        run_ui_server(
-            workflow_file=workflow_file,
-            repo_path=repo_path,
-            host=host,
-            port=port,
-            open_browser=not no_open,
-        )
-    except KeyboardInterrupt:
-        console.print("\n[dim]UI server stopped.[/dim]")
-    except Exception as e:
-        console.print(f"[red bold]UI error:[/red bold] {e}")
-        sys.exit(1)
         console.print("[bold]AI demo[/bold]")
         console.print(f"[dim]Workflow:[/dim] {workflow_file}")
         console.print(f"[dim]Step:[/dim] {demo_step.display_name()}  [dim](id: {demo_step.id})[/dim]")
@@ -480,12 +443,100 @@ def ui(workflow_file: Path, repo: Path | None, host: str, port: int, no_open: bo
         console.print()
 
 
-# ─────────────────────────────────────────
-# Entry point
-# ─────────────────────────────────────────
+@cli.command(name="ui")
+@click.argument("workflow_file", type=click.Path(exists=True, path_type=Path))
+@click.option("--repo", type=click.Path(path_type=Path), default=None, help="Repository root.")
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=7337, show_default=True, type=int)
+@click.option("--no-open", is_flag=True, help="Do not open browser automatically.")
+def ui(workflow_file: Path, repo: Path | None, host: str, port: int, no_open: bool) -> None:
+    repo_path = repo or _infer_repo_path(workflow_file)
+    try:
+        run_ui_server(
+            workflow_path=workflow_file,
+            repo_path=repo_path,
+            host=host,
+            port=port,
+            open_browser=not no_open,
+            share=False,
+        )
+    except KeyboardInterrupt:
+        console.print("\n[dim]UI server stopped.[/dim]")
+    except ProFeatureError as e:
+        console.print(render_pro_message(e.feature_name))
+        sys.exit(1)
+    except Exception as e:
+        console.print(f"[red bold]UI error:[/red bold] {e}")
+        sys.exit(1)
 
-def main():
-    cli()
+
+@cli.command(name="share")
+@click.argument("workflow_file", type=click.Path(exists=True, path_type=Path))
+@click.option("--repo", type=click.Path(path_type=Path), default=None, help="Repository root.")
+@click.option("--host", default="127.0.0.1", show_default=True)
+@click.option("--port", default=7337, show_default=True, type=int)
+def share(workflow_file: Path, repo: Path | None, host: str, port: int) -> None:
+    repo_path = repo or _infer_repo_path(workflow_file)
+    try:
+        run_ui_server(
+            workflow_path=workflow_file,
+            repo_path=repo_path,
+            host=host,
+            port=port,
+            open_browser=True,
+            share=True,
+        )
+    except ProFeatureError as e:
+        console.print(render_pro_message(e.feature_name))
+        sys.exit(1)
+
+
+@cli.group(name="auth")
+def auth_group() -> None:
+    """License management."""
+
+
+@auth_group.command(name="login")
+@click.option("--key", "license_key", required=True, help="License key (JWT)")
+def auth_login(license_key: str) -> None:
+    try:
+        lic = save_license(license_key)
+        console.print(f"[green]License saved.[/green] Tier: {lic.tier}, Expires: {lic.expires_at}")
+    except LicenseError as e:
+        console.print(f"[red]Invalid license: {e}[/red]")
+        sys.exit(1)
+
+
+@auth_group.command(name="status")
+def auth_status() -> None:
+    lic = get_license()
+    if not lic:
+        console.print("[yellow]No license found. Free tier active.[/yellow]")
+        return
+    console.print(f"[green]Active license:[/green] {lic.email}")
+    console.print(f"Tier: {lic.tier}")
+    console.print(f"Expires: {lic.expires_at}")
+
+
+@auth_group.command(name="logout")
+def auth_logout() -> None:
+    from .auth.license import LICENSE_PATH
+    if LICENSE_PATH.exists():
+        LICENSE_PATH.unlink()
+        console.print("[green]License removed.[/green]")
+    else:
+        console.print("[dim]No license file to remove.[/dim]")
+
+
+def main() -> None:
+    try:
+        cli()
+    except ProFeatureError as e:
+        console.print(render_pro_message(e.feature_name))
+        sys.exit(1)
+    except UsageLimitError:
+        console.print(render_pro_message("AI explanations"))
+        sys.exit(1)
 
 
 if __name__ == "__main__":

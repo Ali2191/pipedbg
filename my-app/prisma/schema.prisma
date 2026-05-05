@@ -1,0 +1,131 @@
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model Account {
+  id                String  @id @default(cuid())
+  userId            String
+  type              String
+  provider          String
+  providerAccountId String
+  refresh_token     String? @db.Text
+  access_token      String? @db.Text
+  expires_at        Int?
+  token_type        String?
+  scope             String?
+  id_token          String? @db.Text
+  session_state     String?
+  user              User    @relation(fields: [userId], references: [id], onDelete: Cascade)
+
+  @@unique([provider, providerAccountId])
+}
+
+model Session {
+  id           String   @id @default(cuid())
+  sessionToken String   @unique
+  userId       String
+  expires      DateTime
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+}
+
+model User {
+  id            String    @id @default(cuid())
+  name          String?
+  email         String    @unique
+  emailVerified DateTime?
+  image         String?
+  passwordHash  String?
+  accounts      Account[]
+  sessions      Session[]
+  shops         Shop[]
+}
+
+model Shop {
+  id        String        @id @default(cuid())
+  name      String
+  slug      String        @unique
+  email     String        @unique
+  ownerId   String
+  owner     User          @relation(fields: [ownerId], references: [id])
+  materials Material[]
+  quotes    Quote[]
+  settings  ShopSettings?
+  createdAt DateTime      @default(now())
+}
+
+model ShopSettings {
+  id                   String @id @default(cuid())
+  shopId               String @unique
+  shop                 Shop   @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  laborRatePerHour     Float  @default(75.00)
+  overheadPercentage   Float  @default(15.00)
+  defaultMarginPercent Float  @default(30.00)
+  currency             String @default("USD")
+  shopAddress          String?
+  logoUrl              String?
+}
+
+model Material {
+  id          String   @id @default(cuid())
+  shopId      String
+  shop        Shop     @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  name        String
+  type        String
+  thickness   Float?
+  unit        String
+  costPerUnit Float
+  updatedAt   DateTime @updatedAt
+}
+
+model Quote {
+  id               String      @id @default(cuid())
+  shopId           String
+  shop             Shop        @relation(fields: [shopId], references: [id], onDelete: Cascade)
+  status           QuoteStatus @default(DRAFT)
+  customerName     String?
+  customerEmail    String?
+  customerCompany  String?
+  sourceEmail      String?
+  sourceSubject    String?
+  rawEmailBody     String? @db.Text
+  projectName      String?
+  materialId       String?
+  material         Material? @relation(fields: [materialId], references: [id])
+  quantity         Int         @default(1)
+  dimensions       String?
+  thickness        Float?
+  finish           String?
+  deliveryDate     DateTime?
+  description      String? @db.Text
+  materialCost     Float       @default(0)
+  laborHours       Float       @default(0)
+  laborCost        Float       @default(0)
+  overheadCost     Float       @default(0)
+  subtotal         Float       @default(0)
+  marginPercent    Float       @default(30)
+  marginAmount     Float       @default(0)
+  totalPrice       Float       @default(0)
+  lineItems        Json?
+  aiExtractedData  Json?
+  aiConfidence     Float?
+  extractionStatus String      @default("PENDING")
+  createdAt        DateTime    @default(now())
+  updatedAt        DateTime    @updatedAt
+  sentAt           DateTime?
+  wonAt            DateTime?
+  lostAt           DateTime?
+}
+
+enum QuoteStatus {
+  DRAFT
+  REVIEW
+  SENT
+  WON
+  LOST
+  EXPIRED
+}

@@ -37,7 +37,7 @@ jobs:
       - name: Run tests
         run: |
           echo "Running pytest..."
-          pytest test_pipedbg.py -v --tb=short
+          pytest tests/test_pipedbg.py -v --tb=short
 
   docker-build:
     name: Build Docker image

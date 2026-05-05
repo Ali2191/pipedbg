@@ -28,7 +28,7 @@ from rich.table import Table
 from rich.text import Text
 from rich.tree import Tree
 
-from .parser import Job, Step, Workflow
+from .parsers.base import Job, Step, Workflow
 from .runner import JobResult, JobStatus, StepResult, StepStatus
 
 console = Console()

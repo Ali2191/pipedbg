@@ -1,0 +1,1 @@
+export function ExportButtons(){return <div className="flex gap-2"><button className="border rounded px-3 py-2">Export PDF</button><button className="border rounded px-3 py-2">Export Excel</button></div>;}

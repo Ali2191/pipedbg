@@ -1,0 +1,104 @@
+{
+  "name": "pipedbg",
+  "displayName": "pipedbg",
+  "description": "Debug CI/CD pipelines locally with pipedbg",
+  "version": "0.1.0",
+  "publisher": "Ali2191",
+  "engines": {
+    "vscode": "^1.85.0"
+  },
+  "categories": ["Other"],
+  "main": "./dist/extension.js",
+  "icon": "media/icon.png",
+  "activationEvents": [
+    "onLanguage:yaml",
+    "workspaceContains:.github/workflows"
+  ],
+  "contributes": {
+    "commands": [
+      {
+        "command": "pipedbg.runWorkflow",
+        "title": "pipedbg: Run Workflow"
+      },
+      {
+        "command": "pipedbg.runCurrentWorkflow",
+        "title": "pipedbg: Run Current Workflow"
+      },
+      {
+        "command": "pipedbg.dryRun",
+        "title": "pipedbg: Dry Run"
+      },
+      {
+        "command": "pipedbg.inspectWorkflow",
+        "title": "pipedbg: Inspect Workflow"
+      },
+      {
+        "command": "pipedbg.validateAllWorkflows",
+        "title": "pipedbg: Validate All Workflows"
+      }
+    ],
+    "configuration": {
+      "title": "pipedbg",
+      "properties": {
+        "pipedbg.pythonPath": {
+          "type": "string",
+          "default": "python3",
+          "description": "Path to the Python executable"
+        },
+        "pipedbg.envFile": {
+          "type": "string",
+          "default": ".env",
+          "description": "Path to the .env secrets file"
+        },
+        "pipedbg.autoOpenTerminal": {
+          "type": "boolean",
+          "default": true,
+          "description": "Automatically focus the pipedbg terminal"
+        },
+        "pipedbg.dockerEnabled": {
+          "type": "boolean",
+          "default": true,
+          "description": "Use Docker when running workflows"
+        }
+      }
+    },
+    "views": {
+      "explorer": [
+        {
+          "id": "pipedbg",
+          "name": "pipedbg"
+        }
+      ]
+    },
+    "menus": {
+      "editor/title": [
+        {
+          "command": "pipedbg.runCurrentWorkflow",
+          "when": "resourceExtname == .yml && resourcePath =~ /\\.github\\/workflows/"
+        },
+        {
+          "command": "pipedbg.runCurrentWorkflow",
+          "when": "resourceExtname == .yaml && resourcePath =~ /\\.github\\/workflows/"
+        },
+        {
+          "command": "pipedbg.inspectWorkflow",
+          "when": "resourceExtname == .yml && resourcePath =~ /\\.github\\/workflows/"
+        },
+        {
+          "command": "pipedbg.inspectWorkflow",
+          "when": "resourceExtname == .yaml && resourcePath =~ /\\.github\\/workflows/"
+        }
+      ]
+    }
+  },
+  "scripts": {
+    "compile": "tsc -p ./",
+    "watch": "tsc -w -p ./",
+    "package": "vsce package"
+  },
+  "devDependencies": {
+    "@types/node": "^20.11.30",
+    "@types/vscode": "^1.85.0",
+    "typescript": "^5.4.5"
+  }
+}
