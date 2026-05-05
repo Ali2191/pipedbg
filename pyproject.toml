@@ -1,10 +1,10 @@
 [build-system]
 requires = ["setuptools>=68", "wheel"]
-build-backend = "setuptools.backends.legacy:build"
+build-backend = "setuptools.build_meta"
 
 [project]
 name = "pipedbg"
-version = "0.1.0"
+version = "0.1.1"
 description = "Debug CI/CD pipelines locally — breakpoints, live logs, AI failure explanations"
 readme = "README.md"
 requires-python = ">=3.11"
@@ -46,3 +46,7 @@ pipedbg = "pipedbg.cli:main"
 [tool.setuptools.packages.find]
 where = ["."]
 include = ["pipedbg*"]
+
+[tool.setuptools.package-data]
+pipedbg = ["**/*"]
+
