@@ -1,0 +1,715 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Spot the Bug — SecureOS</title>
+<link rel="icon" type="image/svg+xml" href="favicon.svg" />
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060606; --surface: #0f0f0f;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; min-height: 100vh; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  ::selection { background: rgba(255,68,68,0.35); }
+
+  /* nav */
+  .nav { height: 60px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 16px; letter-spacing: -0.02em; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .here { color: var(--text); }
+  .nav-cta a { font-size: 13px; color: var(--muted); padding: 6px 12px; border-radius: 6px; border: 1px solid var(--border-strong); }
+  .nav-cta a:hover { color: var(--text); border-color: rgba(255,255,255,0.2); }
+
+  /* game shell */
+  .game { max-width: 1080px; margin: 0 auto; padding: 32px 24px 80px; }
+  .game-h {
+    display: flex; align-items: center; justify-content: space-between;
+    flex-wrap: wrap; gap: 16px;
+    margin-bottom: 28px;
+  }
+  .title-block h1 { font-size: 32px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; }
+  .title-block .sub { color: var(--muted); font-size: 14px; margin-top: 6px; }
+  .progress-block { display: flex; align-items: center; gap: 16px; }
+  .progress-dots { display: flex; gap: 6px; }
+  .pd { width: 22px; height: 6px; border-radius: 3px; background: rgba(255,255,255,0.06); transition: background .25s ease; }
+  .pd.done { background: var(--success); }
+  .pd.wrong { background: var(--primary); }
+  .pd.current { background: var(--text); box-shadow: 0 0 10px rgba(255,255,255,0.4); }
+  .score-chip {
+    font-family: var(--font-mono); font-size: 12.5px;
+    padding: 6px 12px; border-radius: 6px;
+    background: var(--surface); border: 1px solid var(--border-strong);
+    color: var(--text-2);
+  }
+  .score-chip .v { color: var(--success); }
+
+  /* puzzle area */
+  .puzzle-meta {
+    display: flex; gap: 12px; align-items: center;
+    margin-bottom: 14px; flex-wrap: wrap;
+  }
+  .puzzle-num {
+    font-family: var(--font-mono); font-size: 12.5px;
+    color: var(--muted); letter-spacing: 0.06em;
+  }
+  .puzzle-num strong { color: var(--text); }
+  .tag {
+    font-size: 11px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 3px 8px; border-radius: 4px;
+    text-transform: uppercase;
+  }
+  .tag.lang { background: rgba(68,136,255,0.08); color: var(--secondary); border: 1px solid rgba(68,136,255,0.25); }
+  .tag.diff { background: rgba(255,170,0,0.08); color: var(--warning); border: 1px solid rgba(255,170,0,0.25); }
+  .tag.diff.easy { background: rgba(68,204,136,0.08); color: var(--success); border-color: rgba(68,204,136,0.25); }
+  .tag.diff.hard { background: rgba(255,68,68,0.08); color: var(--primary); border-color: rgba(255,68,68,0.25); }
+  .prompt {
+    font-size: 22px; font-weight: 500; letter-spacing: -0.015em;
+    line-height: 1.3;
+    margin-bottom: 6px;
+    text-wrap: pretty;
+  }
+  .prompt-sub { color: var(--muted); font-size: 14px; margin-bottom: 20px; }
+  .prompt-sub kbd {
+    font-family: var(--font-mono); font-size: 11px;
+    background: rgba(255,255,255,0.06);
+    border: 1px solid var(--border-strong);
+    border-bottom-width: 2px;
+    border-radius: 4px;
+    padding: 1px 6px;
+    color: var(--text-2);
+  }
+
+  /* code editor */
+  .editor {
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: linear-gradient(180deg, #0a0a0a, #050505);
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+  .ed-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .ed-dot { width: 10px; height: 10px; border-radius: 50%; background: #2a2a2a; }
+  .ed-dot.r { background: #ff5f57; } .ed-dot.y { background: #febc2e; } .ed-dot.g { background: #28c840; }
+  .ed-title {
+    margin-left: 12px;
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted);
+  }
+  .ed-counter {
+    margin-left: auto;
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--muted-2);
+  }
+  .ed-counter strong { color: var(--text); }
+
+  .ed-body {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    font-family: var(--font-mono);
+    font-size: 13.5px;
+    line-height: 1.65;
+    padding: 0;
+    overflow-x: auto;
+  }
+  .gutter {
+    color: var(--muted-2);
+    text-align: right;
+    padding: 18px 12px 22px 0;
+    user-select: none;
+    border-right: 1px solid var(--border);
+    background: rgba(255,255,255,0.012);
+  }
+  .gutter .ln {
+    height: 22px;
+  }
+  .src {
+    padding: 18px 20px 22px;
+    white-space: pre;
+  }
+  .src .line {
+    height: 22px;
+    display: flex;
+    padding: 0 8px;
+    margin: 0 -8px;
+    border-radius: 4px;
+    cursor: pointer;
+    transition: background .12s ease;
+    position: relative;
+  }
+  .src .line:not(.locked):hover { background: rgba(255,255,255,0.04); }
+  .src .line.picked {
+    background: rgba(255,170,0,0.10);
+    box-shadow: inset 2px 0 0 var(--warning);
+  }
+  .src .line.picked::after {
+    content: "?";
+    position: absolute; right: 12px;
+    color: var(--warning);
+    font-family: var(--font-mono);
+    font-weight: 600;
+  }
+  .src .line.revealed-bug {
+    background: rgba(255,68,68,0.10) !important;
+    box-shadow: inset 2px 0 0 var(--primary);
+  }
+  .src .line.revealed-bug::after {
+    content: "BUG";
+    position: absolute; right: 12px;
+    color: var(--primary);
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .src .line.revealed-correct {
+    background: rgba(68,204,136,0.10) !important;
+    box-shadow: inset 2px 0 0 var(--success);
+  }
+  .src .line.revealed-correct::after {
+    content: "✓ CAUGHT";
+    position: absolute; right: 12px;
+    color: var(--success);
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .src .line.revealed-wrong-pick {
+    background: rgba(255,255,255,0.02) !important;
+    box-shadow: inset 2px 0 0 var(--muted-2);
+    opacity: 0.55;
+  }
+  .src .line.revealed-wrong-pick::after {
+    content: "× FALSE";
+    position: absolute; right: 12px;
+    color: var(--muted-2);
+    font-family: var(--font-mono);
+    font-size: 10px; font-weight: 600;
+    letter-spacing: 0.08em;
+  }
+  .src .line.locked { cursor: default; }
+  .kw { color: #b285ff; } .str { color: #6cdc8f; } .com { color: var(--muted-2); font-style: italic; } .num { color: #ffaa00; } .fn { color: #88c8ff; }
+
+  /* action bar */
+  .action-bar {
+    margin-top: 20px;
+    display: flex; align-items: center; gap: 12px; flex-wrap: wrap;
+  }
+  .btn {
+    height: 40px; padding: 0 18px;
+    border-radius: 8px;
+    font-size: 14px; font-weight: 500;
+    display: inline-flex; align-items: center; gap: 8px;
+    transition: all .15s ease;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #ff5959; transform: translateY(-1px); }
+  .btn-primary:disabled { background: rgba(255,68,68,0.3); cursor: not-allowed; transform: none; }
+  .btn-ghost { background: transparent; border: 1px solid var(--border-strong); color: var(--text); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.2); }
+  .help-text { color: var(--muted); font-size: 13.5px; margin-left: auto; }
+  .help-text strong { color: var(--text); }
+
+  /* reveal panel */
+  .reveal {
+    margin-top: 18px;
+    border-radius: 12px;
+    overflow: hidden;
+    display: none;
+  }
+  .reveal.shown { display: block; }
+  .reveal-head {
+    display: flex; align-items: center; gap: 12px;
+    padding: 14px 18px;
+    font-size: 14px;
+  }
+  .reveal-head.win { background: rgba(68,204,136,0.08); color: var(--success); border: 1px solid rgba(68,204,136,0.25); }
+  .reveal-head.partial { background: rgba(255,170,0,0.08); color: var(--warning); border: 1px solid rgba(255,170,0,0.25); }
+  .reveal-head.miss { background: rgba(255,68,68,0.08); color: var(--primary); border: 1px solid rgba(255,68,68,0.25); }
+  .reveal-head .res-mark {
+    width: 28px; height: 28px; border-radius: 50%;
+    display: grid; place-items: center;
+    border: 1px solid currentColor;
+  }
+  .reveal-head strong { font-weight: 600; }
+  .reveal-explain {
+    padding: 20px 22px;
+    background: var(--surface);
+    border: 1px solid var(--border);
+    border-top: 0;
+    border-radius: 0 0 12px 12px;
+  }
+  .reveal-bug {
+    padding: 12px 14px;
+    border-radius: 8px;
+    background: rgba(255,68,68,0.05);
+    border: 1px solid rgba(255,68,68,0.18);
+    margin-bottom: 12px;
+  }
+  .reveal-bug:last-child { margin-bottom: 0; }
+  .reveal-bug-h {
+    display: flex; align-items: center; gap: 10px;
+    margin-bottom: 6px;
+  }
+  .reveal-bug-line {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--muted);
+  }
+  .reveal-bug-name { font-weight: 600; color: var(--text); font-size: 14px; }
+  .reveal-bug-desc { color: var(--text-2); font-size: 13.5px; line-height: 1.6; }
+  .reveal-bug-desc code { font-family: var(--font-mono); font-size: 12px; background: rgba(0,0,0,0.3); padding: 1px 5px; border-radius: 3px; color: var(--success); }
+
+  /* final summary */
+  .final {
+    display: none;
+    text-align: center;
+    padding: 60px 30px;
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    background: var(--surface);
+  }
+  .final.shown { display: block; }
+  .final-mark {
+    width: 72px; height: 72px; border-radius: 50%;
+    margin: 0 auto 24px;
+    display: grid; place-items: center;
+    background: rgba(68,204,136,0.08);
+    border: 1px solid rgba(68,204,136,0.25);
+    color: var(--success);
+    font-size: 32px;
+  }
+  .final.b .final-mark { background: rgba(255,170,0,0.08); border-color: rgba(255,170,0,0.25); color: var(--warning); }
+  .final.c .final-mark { background: rgba(255,68,68,0.08); border-color: rgba(255,68,68,0.25); color: var(--primary); }
+  .final h2 { font-size: 32px; font-weight: 600; letter-spacing: -0.025em; margin-bottom: 12px; }
+  .final .score-line {
+    font-family: var(--font-mono); font-size: 14px; color: var(--muted);
+    margin-bottom: 24px;
+  }
+  .final .score-line strong { color: var(--text); font-size: 24px; font-weight: 600; }
+  .final p { color: var(--text-2); font-size: 16px; max-width: 460px; margin: 0 auto 32px; line-height: 1.6; }
+  .final-cta { display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center; }
+
+  @media (max-width: 720px) {
+    .game-h { flex-direction: column; align-items: flex-start; }
+    .progress-block { width: 100%; justify-content: space-between; }
+    .src { font-size: 12px; }
+    .crumb { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span style="color:var(--muted-2);">/</span>
+        <span class="here">Spot the bug</span>
+      </span>
+    </div>
+    <div class="nav-cta">
+      <a href="SecureOS Landing.html#pricing">Connect GitHub →</a>
+    </div>
+  </div>
+</nav>
+
+<main class="game">
+  <div class="game-h">
+    <div class="title-block">
+      <h1>Spot the bug.</h1>
+      <div class="sub">5 snippets. Each has one or more security holes. Click the line numbers you think are vulnerable.</div>
+    </div>
+    <div class="progress-block">
+      <div class="progress-dots" id="dots"></div>
+      <div class="score-chip">score: <span class="v" id="score">0</span> / <span id="max">15</span></div>
+    </div>
+  </div>
+
+  <div id="puzzle-mount"></div>
+
+  <div class="final" id="final">
+    <div class="final-mark" id="final-mark">★</div>
+    <h2 id="final-title">You spotted everything.</h2>
+    <div class="score-line"><strong id="final-score">15</strong> / 15</div>
+    <p id="final-blurb">You'd be wasted on a non-security team. Sentinel found these same issues in 1.2 seconds, by the way — and writes the fix.</p>
+    <div class="final-cta">
+      <button class="btn btn-primary" id="restart-btn">Play again</button>
+      <a href="playground.html" class="btn btn-ghost">Try the playground →</a>
+    </div>
+  </div>
+</main>
+
+<script>
+// ============ puzzles ============
+const PUZZLES = [
+  {
+    title: 'auth.js · the login form',
+    lang: 'JavaScript',
+    diff: 'easy',
+    description: 'Cursor just generated this login endpoint. Two of these lines are critical issues. Find both.',
+    lines: [
+      { t: '// auth.js — generated 4 minutes ago', cls: 'com' },
+      { t: '' },
+      { t: '<span class="kw">const</span> express = <span class="fn">require</span>(<span class="str">"express"</span>);' },
+      { t: '<span class="kw">const</span> app = <span class="fn">express</span>();' },
+      { t: '' },
+      { t: '<span class="kw">const</span> JWT_SECRET = <span class="str">"keepitsecret123"</span>;', bug: true, name: 'Hardcoded JWT secret', desc: 'A guessable, hardcoded signing secret means anyone reading source can forge admin tokens. Use a 256-bit random value loaded from your secret manager.' },
+      { t: '' },
+      { t: 'app.post(<span class="str">"/login"</span>, <span class="kw">async</span> (req, res) => {' },
+      { t: '  <span class="kw">const</span> { email, password } = req.body;' },
+      { t: '  <span class="kw">const</span> user = <span class="kw">await</span> db.users.<span class="fn">findOne</span>({ email });' },
+      { t: '  <span class="kw">if</span> (user.password === password) {', bug: true, name: 'Plaintext password compare', desc: 'Passwords must be hashed (bcrypt/argon2). A single DB leak with plaintext compares exposes every password your users have ever set.' },
+      { t: '    res.<span class="fn">json</span>({ token: jwt.<span class="fn">sign</span>({ id: user.id }, JWT_SECRET) });' },
+      { t: '  }' },
+      { t: '});' },
+    ],
+  },
+
+  {
+    title: 'app.py · user lookup',
+    lang: 'Python',
+    diff: 'easy',
+    description: 'A typical Flask endpoint. There\'s exactly one critical bug. Click the line.',
+    lines: [
+      { t: '<span class="com"># app.py — Flask user route</span>', cls: 'com' },
+      { t: '' },
+      { t: '<span class="kw">from</span> flask <span class="kw">import</span> Flask, request, jsonify' },
+      { t: '<span class="kw">import</span> sqlite3' },
+      { t: '' },
+      { t: 'app = <span class="fn">Flask</span>(__name__)' },
+      { t: '' },
+      { t: '<span class="kw">@app</span>.route(<span class="str">"/user/&lt;id&gt;"</span>)' },
+      { t: '<span class="kw">def</span> <span class="fn">get_user</span>(id):' },
+      { t: '    conn = sqlite3.<span class="fn">connect</span>(<span class="str">"app.db"</span>)' },
+      { t: '    query = <span class="str">f"SELECT * FROM users WHERE id = \'{id}\'"</span>', bug: true, name: 'SQL injection via f-string', desc: 'User-controlled <code>id</code> is interpolated into the SQL string. An attacker sending <code>\' OR 1=1; --</code> returns every row. Use parameter binding: <code>execute("SELECT * FROM users WHERE id = ?", (id,))</code>.' },
+      { t: '    result = conn.<span class="fn">execute</span>(query).<span class="fn">fetchone</span>()' },
+      { t: '    <span class="kw">return</span> <span class="fn">jsonify</span>(result)' },
+    ],
+  },
+
+  {
+    title: 'config.js · Express setup',
+    lang: 'JavaScript',
+    diff: 'medium',
+    description: 'A few middleware decisions. Three are dangerous. Be ruthless.',
+    lines: [
+      { t: '<span class="com">// config.js</span>', cls: 'com' },
+      { t: '' },
+      { t: '<span class="kw">const</span> cors = <span class="fn">require</span>(<span class="str">"cors"</span>);' },
+      { t: '<span class="kw">const</span> errorhandler = <span class="fn">require</span>(<span class="str">"errorhandler"</span>);' },
+      { t: '' },
+      { t: 'app.<span class="fn">use</span>(<span class="fn">cors</span>({ origin: <span class="str">"*"</span>, credentials: <span class="kw">true</span> }));', bug: true, name: 'CORS wildcard with credentials', desc: 'Wildcard origin + credentials lets any website make authenticated requests with the user\'s cookies. Pin to your real domains: <code>origin: ["https://yourapp.com"]</code>.' },
+      { t: 'app.<span class="fn">use</span>(express.<span class="fn">json</span>({ limit: <span class="str">"50mb"</span> }));' },
+      { t: '' },
+      { t: 'app.<span class="fn">use</span>(<span class="fn">errorhandler</span>());', bug: true, name: 'Verbose error handler in production', desc: 'errorhandler exposes stack traces, filesystem paths, and library versions on every 500. Use a structured logger and return a generic error.' },
+      { t: '' },
+      { t: '<span class="kw">const</span> session = <span class="fn">require</span>(<span class="str">"express-session"</span>);' },
+      { t: 'app.<span class="fn">use</span>(<span class="fn">session</span>({' },
+      { t: '  secret: process.env.SESSION_SECRET,' },
+      { t: '  cookie: { secure: <span class="kw">false</span>, sameSite: <span class="str">"none"</span> }', bug: true, name: 'Insecure session cookie', desc: 'sameSite: "none" without secure: true means the cookie ships over HTTP and is included in third-party requests — a classic CSRF vector.' },
+      { t: '}));' },
+    ],
+  },
+
+  {
+    title: 'Settings.tsx · React profile page',
+    lang: 'TypeScript',
+    diff: 'medium',
+    description: 'A profile page with a bio editor. Two of these lines are critical issues — one is subtle.',
+    lines: [
+      { t: '<span class="com">// Settings.tsx — generated by Lovable</span>', cls: 'com' },
+      { t: '' },
+      { t: '<span class="kw">import</span> { useState } <span class="kw">from</span> <span class="str">"react"</span>;' },
+      { t: '<span class="kw">import</span> { createClient } <span class="kw">from</span> <span class="str">"@supabase/supabase-js"</span>;' },
+      { t: '' },
+      { t: '<span class="kw">const</span> supabase = <span class="fn">createClient</span>(' },
+      { t: '  process.env.NEXT_PUBLIC_SUPABASE_URL,' },
+      { t: '  process.env.SUPABASE_SERVICE_ROLE_KEY', bug: true, name: 'Service-role key in client bundle', desc: 'Anything imported into a React component ships to every visitor\'s browser. SUPABASE_SERVICE_ROLE_KEY gives full admin access — using it client-side hands your database to anyone who views source.' },
+      { t: ');' },
+      { t: '' },
+      { t: '<span class="kw">export default function</span> <span class="fn">Settings</span>() {' },
+      { t: '  <span class="kw">const</span> [bio, setBio] = <span class="fn">useState</span>(<span class="str">""</span>);' },
+      { t: '' },
+      { t: '  <span class="kw">return</span> (' },
+      { t: '    <div dangerouslySetInnerHTML={{ __html: bio }} />', bug: true, name: 'XSS via dangerouslySetInnerHTML', desc: 'User-controlled <code>bio</code> renders as HTML. Any user can inject <code>&lt;script&gt;</code> and steal session tokens from anyone who views their profile. Render as text or sanitize with DOMPurify.' },
+      { t: '  );' },
+      { t: '}' },
+    ],
+  },
+
+  {
+    title: 'orders.ts · the subtle one',
+    lang: 'TypeScript',
+    diff: 'hard',
+    description: 'This one looks fine. Read carefully. There\'s exactly one issue and it\'s an authorization bug.',
+    lines: [
+      { t: '<span class="com">// orders.ts</span>', cls: 'com' },
+      { t: '' },
+      { t: 'app.<span class="fn">get</span>(<span class="str">"/orders/:id"</span>, requireAuth, <span class="kw">async</span> (req, res) => {' },
+      { t: '  <span class="kw">const</span> orderId = req.params.id;' },
+      { t: '  <span class="kw">const</span> order = <span class="kw">await</span> db.orders.<span class="fn">findOne</span>({ id: orderId });', bug: true, name: 'IDOR — missing ownership check', desc: 'requireAuth confirms the user is logged in, but never checks the order belongs to them. Any user can read any order by changing the URL. Add: <code>if (order.userId !== req.user.id) return res.sendStatus(403)</code>.' },
+      { t: '  <span class="kw">if</span> (!order) <span class="kw">return</span> res.<span class="fn">sendStatus</span>(<span class="num">404</span>);' },
+      { t: '  res.<span class="fn">json</span>(order);' },
+      { t: '});' },
+      { t: '' },
+      { t: 'app.<span class="fn">post</span>(<span class="str">"/orders/:id/cancel"</span>, requireAuth, <span class="kw">async</span> (req, res) => {' },
+      { t: '  <span class="kw">const</span> order = <span class="kw">await</span> db.orders.<span class="fn">findOne</span>({' },
+      { t: '    id: req.params.id,' },
+      { t: '    userId: req.user.id  <span class="com">// good — ownership enforced here</span>' },
+      { t: '  });' },
+      { t: '  <span class="kw">if</span> (!order) <span class="kw">return</span> res.<span class="fn">sendStatus</span>(<span class="num">404</span>);' },
+      { t: '  <span class="kw">await</span> db.orders.<span class="fn">update</span>({ id: order.id }, { status: <span class="str">"cancelled"</span> });' },
+      { t: '  res.<span class="fn">json</span>({ ok: <span class="kw">true</span> });' },
+      { t: '});' },
+    ],
+  },
+];
+
+const MAX_SCORE = PUZZLES.reduce((s, p) => s + p.lines.filter(l => l.bug).length, 0);
+
+let state = {
+  idx: 0,
+  score: 0,
+  picks: new Set(),       // current line picks (set of line indices)
+  revealed: false,
+  results: [],            // per puzzle: { correct, total, score (= correct - falsePositives, min 0) }
+};
+
+// ============ helpers ============
+function $(s) { return document.querySelector(s); }
+function $$(s) { return [...document.querySelectorAll(s)]; }
+
+function renderDots() {
+  const dots = $('#dots');
+  dots.innerHTML = '';
+  for (let i = 0; i < PUZZLES.length; i++) {
+    const d = document.createElement('div');
+    d.className = 'pd';
+    if (i < state.idx) {
+      const r = state.results[i];
+      d.classList.add(r && r.score === r.total ? 'done' : r && r.score > 0 ? 'done' : 'wrong');
+    } else if (i === state.idx) {
+      d.classList.add('current');
+    }
+    dots.appendChild(d);
+  }
+}
+
+function renderPuzzle() {
+  const p = PUZZLES[state.idx];
+  const mount = $('#puzzle-mount');
+  state.picks = new Set();
+  state.revealed = false;
+
+  mount.innerHTML = `
+    <div class="puzzle-meta">
+      <span class="puzzle-num">Puzzle <strong>${state.idx + 1}</strong> of ${PUZZLES.length}</span>
+      <span class="tag lang">${p.lang}</span>
+      <span class="tag diff ${p.diff}">${p.diff}</span>
+    </div>
+    <div class="prompt">${p.description}</div>
+    <div class="prompt-sub">Click lines you think are vulnerable. <kbd>R</kbd> to reveal, <kbd>N</kbd> for next.</div>
+
+    <div class="editor">
+      <div class="ed-head">
+        <span class="ed-dot r"></span><span class="ed-dot y"></span><span class="ed-dot g"></span>
+        <span class="ed-title">${p.title}</span>
+        <span class="ed-counter"><strong id="pick-count">0</strong> picked</span>
+      </div>
+      <div class="ed-body">
+        <div class="gutter">${p.lines.map((_, i) => `<div class="ln">${i + 1}</div>`).join('')}</div>
+        <div class="src" id="src">${p.lines.map((l, i) => `<div class="line" data-line="${i}">${l.t || '&nbsp;'}</div>`).join('')}</div>
+      </div>
+    </div>
+
+    <div class="action-bar">
+      <button class="btn btn-primary" id="reveal-btn" disabled>Reveal answers</button>
+      <button class="btn btn-ghost" id="skip-btn">Skip</button>
+      <span class="help-text">Tip: think like the attacker. <strong>What can a user control?</strong></span>
+    </div>
+
+    <div class="reveal" id="reveal"></div>
+  `;
+
+  // wire clicks
+  $$('#src .line').forEach(el => {
+    el.addEventListener('click', () => {
+      if (state.revealed) return;
+      const i = parseInt(el.dataset.line, 10);
+      if (state.picks.has(i)) { state.picks.delete(i); el.classList.remove('picked'); }
+      else { state.picks.add(i); el.classList.add('picked'); }
+      $('#pick-count').textContent = state.picks.size;
+      $('#reveal-btn').disabled = state.picks.size === 0;
+    });
+  });
+
+  $('#reveal-btn').addEventListener('click', reveal);
+  $('#skip-btn').addEventListener('click', () => {
+    if (state.revealed) next(); else { state.picks.clear(); reveal(); }
+  });
+
+  renderDots();
+}
+
+function reveal() {
+  if (state.revealed) return;
+  state.revealed = true;
+  const p = PUZZLES[state.idx];
+  const bugLines = p.lines.map((l, i) => l.bug ? i : -1).filter(i => i >= 0);
+  const total = bugLines.length;
+  const correct = bugLines.filter(i => state.picks.has(i)).length;
+  const wrongPicks = [...state.picks].filter(i => !bugLines.includes(i));
+  const puzzleScore = Math.max(0, correct - wrongPicks.length);
+
+  state.results[state.idx] = { correct, total, score: puzzleScore, wrong: wrongPicks.length };
+  state.score += puzzleScore;
+  $('#score').textContent = state.score;
+
+  // update line classes
+  $$('#src .line').forEach(el => {
+    const i = parseInt(el.dataset.line, 10);
+    el.classList.add('locked');
+    el.classList.remove('picked');
+    if (bugLines.includes(i)) {
+      el.classList.add(state.picks.has(i) ? 'revealed-correct' : 'revealed-bug');
+    } else if (state.picks.has(i)) {
+      el.classList.add('revealed-wrong-pick');
+    }
+  });
+
+  // header
+  const rev = $('#reveal');
+  rev.classList.add('shown');
+  let headClass, headText;
+  if (correct === total && wrongPicks.length === 0) {
+    headClass = 'win';
+    headText = `Perfect. <strong>${correct} of ${total}</strong> caught, no false positives. +${puzzleScore} points.`;
+  } else if (correct >= 1 && wrongPicks.length <= 1) {
+    headClass = 'partial';
+    headText = `Almost. <strong>${correct} of ${total}</strong> caught${wrongPicks.length ? ', ' + wrongPicks.length + ' false positive' + (wrongPicks.length > 1 ? 's' : '') : ''}. +${puzzleScore} point${puzzleScore !== 1 ? 's' : ''}.`;
+  } else {
+    headClass = 'miss';
+    headText = `Tough one. <strong>${correct} of ${total}</strong> caught${wrongPicks.length ? ', ' + wrongPicks.length + ' false positive' + (wrongPicks.length > 1 ? 's' : '') : ''}. +${puzzleScore} point${puzzleScore !== 1 ? 's' : ''}.`;
+  }
+  const mark = headClass === 'win'
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>'
+    : headClass === 'miss'
+    ? '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg>'
+    : '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9"/><path d="M12 8v4M12 16h.01"/></svg>';
+
+  rev.innerHTML = `
+    <div class="reveal-head ${headClass}">
+      <span class="res-mark">${mark}</span>
+      <div>${headText}</div>
+    </div>
+    <div class="reveal-explain">
+      ${bugLines.map(i => {
+        const l = p.lines[i];
+        const caught = state.picks.has(i);
+        return `
+          <div class="reveal-bug">
+            <div class="reveal-bug-h">
+              <span class="reveal-bug-line">line ${i + 1}${caught ? ' · ✓ caught' : ' · missed'}</span>
+              <span style="margin-left:auto;font-family:var(--font-mono);font-size:10.5px;padding:2px 6px;border-radius:3px;background:rgba(255,68,68,0.10);color:var(--primary);letter-spacing:0.06em;">CRITICAL</span>
+            </div>
+            <div class="reveal-bug-name">${l.name}</div>
+            <div class="reveal-bug-desc">${l.desc}</div>
+          </div>
+        `;
+      }).join('')}
+      <div style="margin-top:16px;padding-top:16px;border-top:1px solid var(--border);display:flex;justify-content:space-between;align-items:center;gap:14px;flex-wrap:wrap;">
+        <div style="font-size:13px;color:var(--muted);">Sentinel finds these in <strong style="color:var(--text);">~1.2s</strong> and writes the fix.</div>
+        <button class="btn btn-primary" id="next-btn">${state.idx === PUZZLES.length - 1 ? 'See your final score →' : 'Next puzzle →'}</button>
+      </div>
+    </div>
+  `;
+  $('#next-btn').addEventListener('click', next);
+}
+
+function next() {
+  if (state.idx >= PUZZLES.length - 1) {
+    showFinal();
+    return;
+  }
+  state.idx++;
+  renderPuzzle();
+}
+
+function showFinal() {
+  $('#puzzle-mount').style.display = 'none';
+  $('#dots').parentElement.style.display = 'none';
+  const final = $('#final');
+  final.classList.add('shown');
+
+  const pct = state.score / MAX_SCORE;
+  let title, mark, blurb, cls = '';
+  if (pct === 1) {
+    title = "Flawless. You spotted everything."; mark = "★";
+    blurb = "You'd waste your talent on a non-security team. Sentinel found these same issues in 1.2 seconds and wrote the fixes — consider it a friendly colleague.";
+  } else if (pct >= 0.7) {
+    title = "Sharp. Most caught, a couple slipped."; mark = "✓"; cls = '';
+    blurb = "You'd catch the headline-grade stuff. Sentinel catches the rest while you sleep — and explains every miss so you don't make it twice.";
+  } else if (pct >= 0.4) {
+    title = "Half caught. Which is why this exists."; mark = "?"; cls = 'b';
+    blurb = "Vibe-coded apps ship with these patterns by the dozen. Sentinel runs on every commit. Free, forever — no install ceremony.";
+  } else {
+    title = "Honestly, that's most of us."; mark = "!"; cls = 'c';
+    blurb = "Security pattern matching is unfair to humans. Sentinel was built on rules so you don't have to memorize them. Free forever.";
+  }
+  final.className = 'final shown ' + cls;
+  $('#final-mark').textContent = mark;
+  $('#final-title').textContent = title;
+  $('#final-score').textContent = state.score;
+  $('#final-blurb').textContent = blurb;
+}
+
+// restart
+$('#restart-btn').addEventListener('click', () => {
+  state = { idx: 0, score: 0, picks: new Set(), revealed: false, results: [] };
+  $('#puzzle-mount').style.display = '';
+  $('#dots').parentElement.style.display = '';
+  $('#final').classList.remove('shown');
+  $('#score').textContent = '0';
+  renderPuzzle();
+});
+
+// keyboard
+window.addEventListener('keydown', (e) => {
+  if (e.target.tagName === 'INPUT' || e.target.tagName === 'TEXTAREA') return;
+  if (e.key === 'r' || e.key === 'R') {
+    const btn = $('#reveal-btn');
+    if (btn && !btn.disabled && !state.revealed) btn.click();
+  } else if (e.key === 'n' || e.key === 'N') {
+    const btn = $('#next-btn');
+    if (btn) btn.click();
+  }
+});
+
+$('#max').textContent = MAX_SCORE;
+renderPuzzle();
+</script>
+</body>
+</html>

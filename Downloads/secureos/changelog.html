@@ -1,0 +1,429 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Changelog — SecureOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --surface: #0f0f0f;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --container: 880px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  code { font-family: var(--font-mono); font-size: 0.88em; background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 4px; }
+  ::selection { background: rgba(255,68,68,0.35); }
+
+  .container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  .nav { height: 64px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #ff5959; }
+
+  /* hero */
+  .hero { padding: 80px 0 50px; text-align: center; }
+  .hero-eyebrow { font-size: 13px; color: var(--muted); letter-spacing: 0.04em; margin-bottom: 14px; }
+  .hero h1 { font-size: clamp(38px, 5vw, 56px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; }
+  .hero p { color: var(--text-2); font-size: 17px; margin-top: 16px; max-width: 540px; margin-left: auto; margin-right: auto; }
+  .hero-sub-actions {
+    margin-top: 26px;
+    display: inline-flex; gap: 10px; flex-wrap: wrap; justify-content: center;
+  }
+  .sub-pill {
+    height: 32px; padding: 0 14px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: rgba(255,255,255,0.015);
+    font-size: 13px; color: var(--text-2);
+    display: inline-flex; align-items: center; gap: 8px;
+  }
+  .sub-pill:hover { background: rgba(255,255,255,0.04); border-color: rgba(255,255,255,0.2); }
+
+  /* timeline */
+  .timeline {
+    padding: 60px 0 120px;
+    position: relative;
+  }
+  .release {
+    position: relative;
+    padding-left: 180px;
+    margin-bottom: 96px;
+  }
+  .release::before {
+    content: ""; position: absolute;
+    left: 140px; top: 8px; bottom: -96px;
+    width: 1px; background: var(--border);
+  }
+  .release:last-child::before { bottom: 0; height: 0; }
+  .release-date {
+    position: absolute; left: 0; top: 0;
+    width: 130px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    color: var(--muted);
+    text-align: right;
+    padding-top: 2px;
+  }
+  .release-dot {
+    position: absolute;
+    left: 135px; top: 6px;
+    width: 11px; height: 11px;
+    border-radius: 50%;
+    background: var(--bg);
+    border: 2px solid var(--border-strong);
+  }
+  .release.major .release-dot {
+    border-color: var(--primary);
+    box-shadow: 0 0 12px rgba(255,68,68,0.5);
+    background: var(--primary);
+  }
+  .release-h {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 6px;
+  }
+  .release-v {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: rgba(255,255,255,0.04);
+    padding: 3px 9px;
+    border-radius: 4px;
+    color: var(--text-2);
+    border: 1px solid var(--border-strong);
+  }
+  .release.major .release-v { background: rgba(255,68,68,0.10); color: var(--primary); border-color: rgba(255,68,68,0.3); }
+  .release-tag {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 3px 7px; border-radius: 4px;
+    text-transform: uppercase;
+    background: rgba(178,133,255,0.10); color: var(--purple);
+    border: 1px solid rgba(178,133,255,0.28);
+  }
+  .release-tag.new { background: rgba(68,204,136,0.10); color: var(--success); border-color: rgba(68,204,136,0.28); }
+
+  .release-title {
+    font-size: 26px; font-weight: 600; letter-spacing: -0.015em;
+    line-height: 1.2;
+    margin-bottom: 14px;
+  }
+  .release-blurb {
+    color: var(--text-2);
+    font-size: 16px;
+    line-height: 1.6;
+    margin-bottom: 18px;
+    max-width: 560px;
+    text-wrap: pretty;
+  }
+
+  /* hero image area for each release */
+  .release-hero {
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface);
+    overflow: hidden;
+    margin-bottom: 22px;
+  }
+  .release-hero-head {
+    display: flex; align-items: center; gap: 7px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .rd { width: 10px; height: 10px; border-radius: 50%; background: #2a2a2a; }
+  .rd.r { background: #ff5f57; } .rd.y { background: #febc2e; } .rd.g { background: #28c840; }
+  .release-hero-title { font-family: var(--font-mono); font-size: 11px; color: var(--muted); margin-left: 8px; }
+  .release-hero-body { padding: 24px; font-family: var(--font-mono); font-size: 13px; line-height: 1.7; color: #d5d5d5; white-space: pre-wrap; }
+  .release-hero-body .meta { color: var(--muted); }
+  .release-hero-body .ok { color: var(--success); }
+  .release-hero-body .warn { color: var(--warning); }
+  .release-hero-body .crit { color: var(--primary); }
+
+  .change-list {
+    margin: 0; padding: 0; list-style: none;
+  }
+  .change-list li {
+    padding: 10px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    margin-bottom: 6px;
+    font-size: 14px;
+    color: var(--text-2);
+    display: flex; gap: 12px; align-items: baseline;
+    line-height: 1.55;
+  }
+  .change-list .ct {
+    font-family: var(--font-mono);
+    font-size: 10.5px;
+    letter-spacing: 0.06em;
+    padding: 2px 6px;
+    border-radius: 3px;
+    text-transform: uppercase;
+    flex-shrink: 0;
+    margin-top: 1px;
+  }
+  .ct.feature  { background: rgba(68,204,136,0.10); color: var(--success); border: 1px solid rgba(68,204,136,0.28); }
+  .ct.fix      { background: rgba(68,136,255,0.10); color: var(--secondary); border: 1px solid rgba(68,136,255,0.28); }
+  .ct.rules    { background: rgba(255,170,0,0.10); color: var(--warning); border: 1px solid rgba(255,170,0,0.28); }
+  .ct.agent    { background: rgba(178,133,255,0.10); color: var(--purple); border: 1px solid rgba(178,133,255,0.28); }
+  .ct.breaking { background: rgba(255,68,68,0.10); color: var(--primary); border: 1px solid rgba(255,68,68,0.28); }
+  .ct.security { background: rgba(255,68,68,0.10); color: var(--primary); border: 1px solid rgba(255,68,68,0.28); }
+  .change-list strong { color: var(--text); }
+
+  /* footer */
+  .footer { border-top: 1px solid var(--border); padding: 56px 0 36px; }
+  .footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 22px; font-size: 14px; color: var(--muted); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 760px) {
+    .release { padding-left: 30px; }
+    .release::before { left: 6px; }
+    .release-dot { left: 1px; }
+    .release-date { position: relative; width: auto; text-align: left; margin-bottom: 6px; padding: 0; }
+    .nav-links { display: none; }
+    .crumb { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span class="sep">/</span>
+        <span class="here">Changelog</span>
+      </span>
+    </div>
+    <div class="nav-links">
+      <a href="SecureOS Landing.html#agents">Agents</a>
+      <a href="playground.html">Playground</a>
+      <a href="docs/quickstart.html">Docs</a>
+      <a href="SecureOS Landing.html#pricing">Pricing</a>
+    </div>
+    <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" class="btn btn-primary" style="height:34px;font-size:13px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.72.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96z"/></svg>
+      Connect GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="container">
+    <div class="hero-eyebrow">Releases · public</div>
+    <h1>Changelog</h1>
+    <p>Every meaningful change ships here. Subscribe to the RSS feed or follow on X.</p>
+    <div class="hero-sub-actions">
+      <a href="#" class="sub-pill">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M4 11a9 9 0 019 9M4 4a16 16 0 0116 16M5 19a1 1 0 11-2 0 1 1 0 012 0z"/></svg>
+        RSS
+      </a>
+      <a href="#" class="sub-pill">Follow on X</a>
+      <a href="https://github.com/Ali2191/vibeguard/releases" target="_blank" rel="noopener" class="sub-pill">GitHub releases</a>
+    </div>
+  </div>
+</header>
+
+<main class="container timeline">
+
+  <article class="release major">
+    <div class="release-date">May 14, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.4</span>
+      <span class="release-tag new">Major</span>
+    </div>
+    <h2 class="release-title">Compliance Officer is generally available</h2>
+    <p class="release-blurb">Map your codebase against SOC 2, GDPR, HIPAA, and PCI-DSS — automatically. Compliance Officer reads your repos, your data flows, and your existing docs, then tells you exactly which controls you're missing and drafts the policies for the rest.</p>
+
+    <div class="release-hero">
+      <div class="release-hero-head"><span class="rd r"></span><span class="rd y"></span><span class="rd g"></span><span class="release-hero-title">compliance · my-saas-app · SOC 2 Type I</span></div>
+      <div class="release-hero-body"><span class="meta">→ Compliance Officer scanned 847 files, 6 services, 4 third-party integrations</span>
+
+  <span class="ok">●</span> Encryption in transit            <span class="ok">covered</span>     <span class="meta">(via Cloudflare + RDS TLS)</span>
+  <span class="ok">●</span> Access logging                   <span class="ok">covered</span>     <span class="meta">(structured logs to Datadog)</span>
+  <span class="warn">●</span> Encryption at rest               <span class="warn">partial</span>     <span class="meta">(prod yes, staging no)</span>
+  <span class="crit">●</span> Quarterly access review          <span class="crit">missing</span>     <span class="meta">(no record found)</span>
+  <span class="crit">●</span> Incident response runbook        <span class="crit">missing</span>     <span class="meta">(draft generated · review →)</span>
+
+<span class="meta">87% complete · 5 items left · est. 4h to close</span></div>
+    </div>
+
+    <ul class="change-list">
+      <li><span class="ct agent">Agent</span><div><strong>Compliance Officer is GA.</strong> Available on the TEAM plan. Maps SOC 2, GDPR, HIPAA, PCI-DSS controls automatically and drafts missing policy docs.</div></li>
+      <li><span class="ct feature">Feature</span><div><strong>Compliance dashboard.</strong> Per-framework progress bars, open items, and an "export evidence" button for auditors.</div></li>
+      <li><span class="ct feature">Feature</span><div><strong>Slack + Discord alerts.</strong> Pipe compliance regressions and Sentinel criticals to a channel.</div></li>
+      <li><span class="ct rules">Rules</span><div>Added 3 Sentinel rules for PCI-DSS-specific patterns: PAN in logs, weak crypto for card storage, exposed admin without MFA.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Apr 28, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.3</span>
+    </div>
+    <h2 class="release-title">Sentinel learns supply-chain patterns</h2>
+    <p class="release-blurb">Auditor now feeds package-history context back into Sentinel. If you import a package that was published last week, has 12 downloads, and matches a name AI tools commonly hallucinate, Sentinel blocks the merge.</p>
+    <ul class="change-list">
+      <li><span class="ct rules">Rules</span><div>New rule <code>SECOS-2210</code>: hallucinated / non-existent package names. Blocks merge by default.</div></li>
+      <li><span class="ct rules">Rules</span><div>New rule <code>SECOS-2211</code>: package published in the last 30 days with under 100 downloads.</div></li>
+      <li><span class="ct feature">Feature</span><div><strong>Auditor × Sentinel handoff.</strong> Auditor's dependency context now travels with PR comments so reviewers see why a package is flagged.</div></li>
+      <li><span class="ct fix">Fix</span><div>Fixed a case where Sentinel false-positived on parameterized queries inside ORMs that wrap raw SQL.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Apr 9, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.2.4</span>
+    </div>
+    <h2 class="release-title">Faster scans · Lovable + Bolt detection</h2>
+    <p class="release-blurb">Average scan time is down to 0.9s for a 50-file repo. Sentinel now detects when code was generated by Cursor, Claude Code, Lovable, or Bolt and weights its rules accordingly.</p>
+    <ul class="change-list">
+      <li><span class="ct feature">Feature</span><div>Tool fingerprinting. Findings show which AI tool likely wrote the offending block so you can fix the prompt instead of the symptom.</div></li>
+      <li><span class="ct fix">Fix</span><div>Rulepack hot-reloading no longer requires a restart.</div></li>
+      <li><span class="ct fix">Fix</span><div>VS Code extension stopped re-highlighting on every save. Now it diffs.</div></li>
+    </ul>
+  </article>
+
+  <article class="release major">
+    <div class="release-date">Mar 22, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.2</span>
+      <span class="release-tag new">Major</span>
+    </div>
+    <h2 class="release-title">Scout · the threat model wizard</h2>
+    <p class="release-blurb">Before you write a line of code, Scout maps your attack surface. Pick a stack, describe the product, get a STRIDE-style model in 30 seconds. Sentinel then uses it to prioritize every commit.</p>
+    <ul class="change-list">
+      <li><span class="ct agent">Agent</span><div><strong>Scout is live.</strong> Available on Pro. Try it free <a href="agents/scout.html" style="color:var(--secondary);">here</a>.</div></li>
+      <li><span class="ct feature">Feature</span><div>Scout writes <code>.secureos/threat-model.md</code> into your repo on first commit. Sentinel reads it on every subsequent scan.</div></li>
+      <li><span class="ct feature">Feature</span><div>15 trust-boundary templates: SaaS, fintech, e-commerce, internal tools, and more.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Mar 1, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.1.2</span>
+    </div>
+    <h2 class="release-title">Penetrator gets OWASP Top 10 (2024)</h2>
+    <p class="release-blurb">The post-deploy attack agent now runs the latest OWASP Top 10 simulations against your live endpoints. Findings include curl repros so you can verify locally.</p>
+    <ul class="change-list">
+      <li><span class="ct agent">Agent</span><div>Penetrator: added 14 new attack patterns covering SSRF, mass-assignment, and prototype pollution.</div></li>
+      <li><span class="ct feature">Feature</span><div>Every finding now ships with a copyable <code>curl</code> repro.</div></li>
+      <li><span class="ct fix">Fix</span><div>Resolved a race where two scheduled scans on the same repo could double-comment a PR.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Feb 11, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.1</span>
+    </div>
+    <h2 class="release-title">Educator + per-mistake personalization</h2>
+    <p class="release-blurb">Educator now remembers what you got wrong yesterday. Explanations get shorter as your mental model fills in. Free, forever.</p>
+    <ul class="change-list">
+      <li><span class="ct agent">Agent</span><div>Educator: per-user explanation depth. First time you see SQL injection you get the full talk; the third time you get the diff.</div></li>
+      <li><span class="ct feature">Feature</span><div>"Why was I flagged?" button on every PR comment. Opens the Educator explanation inline.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Jan 18, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.0.1</span>
+    </div>
+    <h2 class="release-title">Free-tier scan caps removed</h2>
+    <p class="release-blurb">Sentinel is free, forever. We removed the 100-scan/month cap on the free tier. If you're a solo founder, you should never have to think about it.</p>
+    <ul class="change-list">
+      <li><span class="ct breaking">Pricing</span><div><strong>Free tier is unlimited.</strong> Sentinel, GitHub Action, Educator, and HTML reports have no usage cap.</div></li>
+      <li><span class="ct fix">Fix</span><div>Webhook retries on transient GitHub 502s. No more "scan didn't trigger" support tickets.</div></li>
+    </ul>
+  </article>
+
+  <article class="release major">
+    <div class="release-date">Jan 4, 2026</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v2.0</span>
+      <span class="release-tag">Major</span>
+    </div>
+    <h2 class="release-title">SecureOS, the platform</h2>
+    <p class="release-blurb">The Sentinel CLI gets a hosted home and 8 sibling agents. From a single tool you can now cover threat modeling, code scanning, supply chain, pen testing, pre-launch checks, incidents, and compliance — all without leaving GitHub.</p>
+    <ul class="change-list">
+      <li><span class="ct agent">Agent</span><div>Launched <strong>Scout, Architect, Auditor, Penetrator, Launcher, Compliance Officer, Incident Responder, Educator</strong>.</div></li>
+      <li><span class="ct feature">Feature</span><div>Hosted dashboard at <code>app.secureos.dev</code>. PR comments, scan history, agent management.</div></li>
+      <li><span class="ct feature">Feature</span><div>Pricing: Free (Sentinel + Educator), Pro $29/mo, Team $99/mo.</div></li>
+    </ul>
+  </article>
+
+  <article class="release">
+    <div class="release-date">Nov 8, 2025</div>
+    <div class="release-dot"></div>
+    <div class="release-h">
+      <span class="release-v">v1.4</span>
+    </div>
+    <h2 class="release-title">35 rules · Sentinel open source</h2>
+    <p class="release-blurb">Sentinel CLI hits 35 rules, beats Snyk on AI-introduced patterns in our internal benchmark, and gets open sourced under MIT.</p>
+    <ul class="change-list">
+      <li><span class="ct security">Open source</span><div>Sentinel is MIT licensed. Repo: <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" style="color:var(--secondary);">github.com/Ali2191/vibeguard</a>.</div></li>
+      <li><span class="ct rules">Rules</span><div>11 new rules covering CORS, CSP, session cookies, and OAuth state.</div></li>
+      <li><span class="ct feature">Feature</span><div>HTML report export.</div></li>
+    </ul>
+  </article>
+
+</main>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="SecureOS Landing.html" class="logo">
+      <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+      Secure<span class="red">OS</span>
+    </a>
+    <div class="footer-links">
+      <a href="SecureOS Landing.html#agents">Agents</a>
+      <a href="playground.html">Playground</a>
+      <a href="docs/quickstart.html">Docs</a>
+      <a href="security.html">Security</a>
+    </div>
+    <div class="footer-copy">© 2026 SecureOS · secureos.dev</div>
+  </div>
+</footer>
+
+</body>
+</html>

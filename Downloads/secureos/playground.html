@@ -1,0 +1,809 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Playground — SecureOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #060606;
+    --surface: #0c0c0c;
+    --surface-2: #111;
+    --border: rgba(255,255,255,0.06);
+    --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444;
+    --secondary: #4488ff;
+    --success: #44cc88;
+    --warning: #ffaa00;
+    --purple: #b285ff;
+    --text: #f0f0f0;
+    --text-2: #c8c8c8;
+    --muted: #888;
+    --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; height: 100vh; overflow: hidden; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 14px; line-height: 1.5; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  ::selection { background: rgba(255,68,68,0.35); color: #fff; }
+
+  /* ============ top bar ============ */
+  .bar {
+    height: 52px;
+    display: flex; align-items: center; gap: 18px;
+    padding: 0 18px;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    flex-shrink: 0;
+  }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 15px; letter-spacing: -0.01em; }
+  .logo-mark {
+    width: 22px; height: 22px; display: inline-grid; place-items: center;
+    border: 1px solid var(--border-strong); border-radius: 6px;
+    background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05));
+  }
+  .logo .red { color: var(--primary); }
+  .crumb {
+    display: inline-flex; align-items: center; gap: 10px;
+    font-size: 13px; color: var(--muted);
+  }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .bar-spacer { flex: 1; }
+  .bar-meta {
+    font-family: var(--font-mono); font-size: 12px; color: var(--muted-2);
+    display: inline-flex; align-items: center; gap: 6px;
+  }
+
+  .btn {
+    display: inline-flex; align-items: center; justify-content: center; gap: 8px;
+    height: 32px; padding: 0 14px; border-radius: 7px;
+    font-size: 13px; font-weight: 500;
+    transition: all .12s ease; white-space: nowrap;
+  }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #ff5959; }
+  .btn-primary:disabled { background: rgba(255,68,68,0.4); cursor: not-allowed; }
+  .btn-ghost { background: transparent; color: var(--text-2); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { color: var(--text); border-color: rgba(255,255,255,0.20); }
+  .btn-sm { height: 28px; padding: 0 11px; font-size: 12px; }
+
+  /* ============ workspace ============ */
+  .workspace {
+    display: grid;
+    grid-template-columns: 1fr 380px;
+    height: calc(100vh - 52px);
+    overflow: hidden;
+  }
+  .editor-pane {
+    display: flex; flex-direction: column;
+    border-right: 1px solid var(--border);
+    min-width: 0;
+  }
+  .ed-tabs {
+    display: flex; align-items: center; gap: 4px;
+    padding: 8px 12px 0;
+    border-bottom: 1px solid var(--border);
+    background: var(--surface);
+    overflow-x: auto;
+    flex-shrink: 0;
+  }
+  .ed-tab {
+    padding: 7px 14px;
+    font-size: 12.5px; color: var(--muted);
+    border-radius: 6px 6px 0 0;
+    border: 1px solid transparent;
+    border-bottom: 0;
+    display: inline-flex; align-items: center; gap: 8px;
+    cursor: pointer; white-space: nowrap;
+  }
+  .ed-tab .lang {
+    font-size: 10.5px; padding: 1px 6px; border-radius: 4px;
+    background: rgba(255,255,255,0.04); color: var(--muted);
+    font-family: var(--font-mono);
+  }
+  .ed-tab:hover { color: var(--text-2); }
+  .ed-tab.active {
+    color: var(--text); background: var(--bg);
+    border-color: var(--border);
+    margin-bottom: -1px;
+  }
+
+  .ed-body {
+    flex: 1; overflow: auto;
+    background: var(--bg);
+    position: relative;
+  }
+  .code {
+    display: grid;
+    grid-template-columns: 48px 1fr;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.65;
+    min-height: 100%;
+  }
+  .gutter {
+    color: var(--muted-2);
+    text-align: right;
+    padding: 16px 12px 16px 0;
+    user-select: none;
+    border-right: 1px solid var(--border);
+    background: var(--surface);
+  }
+  .gutter .ln {
+    height: 21px; padding-right: 4px;
+    cursor: pointer;
+    position: relative;
+  }
+  .gutter .ln.has-finding {
+    color: var(--text);
+  }
+  .gutter .ln.has-finding::before {
+    content: ""; position: absolute;
+    left: 4px; top: 6px; width: 8px; height: 8px;
+    border-radius: 50%;
+    background: var(--sev-color, var(--primary));
+    box-shadow: 0 0 6px var(--sev-color, var(--primary));
+  }
+  .src {
+    padding: 16px 18px 32px;
+    white-space: pre;
+    color: var(--text);
+    counter-reset: line;
+  }
+  .src .line {
+    height: 21px;
+    display: block;
+    position: relative;
+    padding-right: 8px;
+  }
+  .src .line.has-finding {
+    background: linear-gradient(90deg, var(--sev-bg, rgba(255,68,68,0.05)) 0%, transparent 100%);
+    box-shadow: inset 2px 0 0 var(--sev-color, var(--primary));
+  }
+  .src .ann {
+    display: block;
+    font-family: var(--font-sans);
+    font-size: 12px;
+    line-height: 1.5;
+    padding: 8px 12px 8px 16px;
+    margin: 2px 0 4px;
+    border-radius: 6px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-left: 3px solid var(--sev-color, var(--primary));
+    color: var(--text-2);
+    white-space: normal;
+  }
+  .src .ann .ann-h {
+    font-size: 11px; letter-spacing: 0.06em; text-transform: uppercase;
+    color: var(--sev-color, var(--primary)); font-weight: 600;
+    margin-bottom: 4px;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .src .ann .ann-h .id { color: var(--muted-2); font-family: var(--font-mono); }
+  .src .ann .ann-body { color: var(--text); margin-bottom: 6px; }
+  .src .ann .ann-fix {
+    margin-top: 8px; padding-top: 8px;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: center; gap: 8px;
+  }
+  .src .ann.applied { opacity: 0.6; }
+  .src .ann.applied .ann-body { text-decoration: line-through; color: var(--muted); }
+
+  /* simple syntax colors */
+  .src .kw  { color: #b285ff; }
+  .src .str { color: #6cdc8f; }
+  .src .com { color: var(--muted-2); font-style: italic; }
+  .src .num { color: #ffaa00; }
+  .src .fn  { color: #88c8ff; }
+
+  /* ============ right pane ============ */
+  .right {
+    display: flex; flex-direction: column;
+    background: var(--surface);
+    min-width: 0;
+  }
+  .right-h {
+    padding: 14px 18px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; justify-content: space-between;
+  }
+  .right-h h3 {
+    font-size: 12px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin: 0; font-weight: 500;
+  }
+  .right-h .count {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--muted-2);
+  }
+
+  .agents-pick {
+    padding: 8px 12px;
+    border-bottom: 1px solid var(--border);
+    max-height: 240px; overflow-y: auto;
+  }
+  .ag {
+    display: flex; align-items: center; gap: 10px;
+    padding: 7px 8px; border-radius: 6px; cursor: pointer;
+    font-size: 12.5px;
+    transition: background .1s ease;
+  }
+  .ag:hover { background: rgba(255,255,255,0.02); }
+  .ag.locked { opacity: 0.55; cursor: not-allowed; }
+  .ag .cb {
+    width: 14px; height: 14px; border-radius: 4px;
+    border: 1px solid var(--border-strong);
+    display: grid; place-items: center;
+    flex-shrink: 0;
+    background: rgba(0,0,0,0.4);
+  }
+  .ag.on .cb {
+    background: var(--primary); border-color: var(--primary);
+  }
+  .ag .cb svg { opacity: 0; }
+  .ag.on .cb svg { opacity: 1; color: #fff; }
+  .ag .nm { flex: 1; color: var(--text); font-weight: 500; }
+  .ag .tier {
+    font-size: 10px; padding: 1px 6px; border-radius: 3px;
+    letter-spacing: 0.06em; font-family: var(--font-mono);
+  }
+  .ag .tier.free { color: var(--success); background: rgba(68,204,136,0.08); }
+  .ag .tier.pro  { color: var(--secondary); background: rgba(68,136,255,0.08); }
+  .ag .tier.team { color: var(--purple); background: rgba(178,133,255,0.08); }
+  .ag .desc { font-size: 11.5px; color: var(--muted); margin-top: 1px; }
+  .ag-row { display: flex; flex-direction: column; flex: 1; min-width: 0; }
+
+  .findings-pane {
+    flex: 1; overflow-y: auto;
+    padding: 4px 0 24px;
+  }
+  .finding-card {
+    margin: 8px 12px;
+    padding: 12px 14px;
+    border: 1px solid var(--border);
+    border-radius: 8px;
+    background: rgba(255,255,255,0.015);
+    border-left: 3px solid var(--sev-color, var(--primary));
+    cursor: pointer;
+    transition: all .12s ease;
+  }
+  .finding-card:hover {
+    background: rgba(255,255,255,0.03);
+    border-color: var(--border-strong);
+  }
+  .finding-card.applied { opacity: 0.5; }
+  .finding-card.applied .fc-body { text-decoration: line-through; }
+  .fc-h {
+    display: flex; align-items: center; gap: 8px;
+    margin-bottom: 6px;
+  }
+  .fc-sev {
+    font-size: 10px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 2px 6px; border-radius: 3px;
+  }
+  .fc-loc {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--muted); margin-left: auto;
+  }
+  .fc-body { font-size: 13px; color: var(--text); line-height: 1.45; }
+  .fc-agent {
+    font-size: 11px; color: var(--muted-2);
+    margin-top: 4px;
+    font-family: var(--font-mono);
+  }
+
+  .empty-state {
+    padding: 60px 30px;
+    text-align: center;
+    color: var(--muted);
+    font-size: 13px;
+  }
+  .empty-state svg {
+    margin-bottom: 16px;
+    opacity: 0.4;
+  }
+  .empty-state .em-h {
+    color: var(--text-2);
+    font-size: 14px;
+    margin-bottom: 6px;
+    font-weight: 500;
+  }
+
+  /* severity colors */
+  .sev-CRITICAL { --sev-color: var(--primary); --sev-bg: rgba(255,68,68,0.05); background: rgba(255,68,68,0.10); color: var(--primary); border: 1px solid rgba(255,68,68,0.3); }
+  .sev-HIGH     { --sev-color: var(--warning); --sev-bg: rgba(255,170,0,0.04); background: rgba(255,170,0,0.10); color: var(--warning); border: 1px solid rgba(255,170,0,0.3); }
+  .sev-MEDIUM   { --sev-color: var(--secondary); --sev-bg: rgba(68,136,255,0.04); background: rgba(68,136,255,0.10); color: var(--secondary); border: 1px solid rgba(68,136,255,0.3); }
+  .sev-LOW      { --sev-color: var(--muted); background: rgba(255,255,255,0.04); color: var(--muted); border: 1px solid var(--border); }
+
+  /* scan progress */
+  .progress-strip {
+    position: fixed; top: 52px; left: 0;
+    height: 2px; background: var(--primary);
+    width: 0; transition: width .35s ease, opacity .25s ease;
+    z-index: 50;
+    box-shadow: 0 0 10px var(--primary);
+  }
+
+  /* scrollbars */
+  ::-webkit-scrollbar { width: 9px; height: 9px; }
+  ::-webkit-scrollbar-track { background: transparent; }
+  ::-webkit-scrollbar-thumb {
+    background: rgba(255,255,255,0.06);
+    border-radius: 4px;
+  }
+  ::-webkit-scrollbar-thumb:hover { background: rgba(255,255,255,0.12); }
+
+  /* mobile */
+  @media (max-width: 880px) {
+    .workspace { grid-template-columns: 1fr; grid-template-rows: 1fr 340px; }
+    .editor-pane { border-right: 0; border-bottom: 1px solid var(--border); }
+    .bar { padding: 0 14px; gap: 10px; }
+    .crumb { display: none; }
+    .bar-meta { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<div class="progress-strip" id="progress"></div>
+
+<header class="bar">
+  <a href="SecureOS Landing.html" class="logo">
+    <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+    Secure<span class="red">OS</span>
+  </a>
+  <span class="crumb">
+    <span class="sep">/</span>
+    <span class="here">Playground</span>
+  </span>
+  <span class="bar-spacer"></span>
+  <span class="bar-meta">
+    <span style="width:7px;height:7px;border-radius:50%;background:var(--warning);"></span>
+    sandbox · no data leaves your browser
+  </span>
+  <button class="btn btn-ghost btn-sm" id="reset-btn">Reset</button>
+  <button class="btn btn-primary" id="run-btn">
+    <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg>
+    Run scan
+  </button>
+</header>
+
+<div class="workspace">
+  <!-- Editor -->
+  <section class="editor-pane">
+    <div class="ed-tabs" id="ed-tabs">
+      <div class="ed-tab active" data-snippet="express">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#88c8ff"><path d="M12 0L1.6 6v12L12 24l10.4-6V6L12 0zm-1 4.5L11 18.7l-5.2-3V8.4L11 5.5v-1z"/></svg>
+        auth.js
+        <span class="lang">node</span>
+      </div>
+      <div class="ed-tab" data-snippet="flask">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#ffd54f"><path d="M14 0H6v8h2V2h6V0zm-3 3a3 3 0 100 6 3 3 0 000-6zM3 10v14h18V10H3zm2 2h2v10H5V12zm4 0h2v10H9V12zm4 0h2v10h-2V12zm4 0h2v10h-2V12z"/></svg>
+        app.py
+        <span class="lang">python</span>
+      </div>
+      <div class="ed-tab" data-snippet="react">
+        <svg width="12" height="12" viewBox="0 0 24 24" fill="#61dafb"><circle cx="12" cy="12" r="2"/><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="none" stroke="#61dafb" stroke-width="1.2"/><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="none" stroke="#61dafb" stroke-width="1.2" transform="rotate(60 12 12)"/><ellipse cx="12" cy="12" rx="11" ry="4.2" fill="none" stroke="#61dafb" stroke-width="1.2" transform="rotate(120 12 12)"/></svg>
+        Settings.tsx
+        <span class="lang">react</span>
+      </div>
+    </div>
+    <div class="ed-body" id="ed-body">
+      <!-- code rendered here -->
+    </div>
+  </section>
+
+  <!-- Right pane -->
+  <aside class="right">
+    <div class="right-h">
+      <h3>Agents</h3>
+      <span class="count" id="agent-count">2 active · 7 locked</span>
+    </div>
+    <div class="agents-pick" id="agents-pick"></div>
+
+    <div class="right-h">
+      <h3>Findings</h3>
+      <span class="count" id="finding-count">0</span>
+    </div>
+    <div class="findings-pane" id="findings-pane">
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div class="em-h">No findings yet</div>
+        <div>Click <strong style="color:var(--primary)">Run scan</strong> to analyze the file.</div>
+      </div>
+    </div>
+  </aside>
+</div>
+
+<script>
+// ============ data ============
+const AGENTS = [
+  { id: 'sentinel',   name: 'Sentinel',           tier: 'free', enabled: true,  desc: 'Real-time code scanner · 35 rules' },
+  { id: 'auditor',    name: 'Auditor',            tier: 'pro',  enabled: false, desc: 'Supply chain monitor' },
+  { id: 'penetrator', name: 'Penetrator',         tier: 'pro',  enabled: false, desc: 'Automated pen tester' },
+  { id: 'scout',      name: 'Scout',              tier: 'pro',  enabled: false, desc: 'Pre-build threat modeler' },
+  { id: 'architect',  name: 'Architect',          tier: 'pro',  enabled: false, desc: 'Secure design advisor' },
+  { id: 'launcher',   name: 'Launcher',           tier: 'pro',  enabled: false, desc: 'Pre-launch auditor' },
+  { id: 'compliance', name: 'Compliance Officer', tier: 'team', enabled: false, desc: 'Regulatory checker' },
+  { id: 'incident',   name: 'Incident Responder', tier: 'team', enabled: false, desc: 'Breach detector' },
+  { id: 'educator',   name: 'Educator',           tier: 'free', enabled: true,  desc: 'Security coach · plain-language' },
+];
+
+// snippets with embedded annotations
+const SNIPPETS = {
+  express: {
+    name: 'auth.js',
+    lang: 'JavaScript · Node',
+    lines: [
+      ['com',  '// auth.js — invite endpoint generated by Cursor + Claude'],
+      [null,   ''],
+      ['kw',   "const ", null, 'express', null, " = ", 'fn', 'require', null, "('express');"],
+      ['kw',   "const ", null, 'cors', null, " = ", 'fn', 'require', null, "('cors');"],
+      ['kw',   "const ", null, 'jwt', null, " = ", 'fn', 'require', null, "('jsonwebtoken');"],
+      ['kw',   "const ", null, 'app', null, " = ", 'fn', 'express', null, "();"],
+      [null,   ''],
+      ['kw',   "const ", null, 'API_KEY', null, " = ", 'str', '"sk_live_4f2c9a1e8b3d7f6aZK2y7..."', null, ';'],
+      ['kw',   "const ", null, 'JWT_SECRET', null, " = ", 'str', '"secret123"', null, ';'],
+      [null,   ''],
+      [null,   'app.use(', 'fn', 'cors', null, '({ origin: ', 'str', '"*"', null, ' }));'],
+      [null,   ''],
+      [null,   "app.post('/login', ", 'kw', 'async ', null, '(req, res) => {'],
+      [null,   '  ', 'kw', 'const ', null, '{ email, password } = req.body;'],
+      [null,   '  ', 'kw', 'const ', null, 'query = `SELECT * FROM users WHERE email = \'${email}\'`;'],
+      [null,   '  ', 'kw', 'const ', null, 'user = ', 'kw', 'await ', null, 'db.query(query);'],
+      [null,   '  ', 'kw', 'if ', null, '(user && user.password === password) {'],
+      [null,   '    res.json({ token: jwt.sign({ id: user.id }, JWT_SECRET) });'],
+      [null,   '  }'],
+      [null,   '});'],
+      [null,   ''],
+      ['kw',   "if ", null, '(process.env.NODE_ENV !== ', 'str', "'production'", null, ') {'],
+      [null,   '  app.use(', 'fn', 'require', null, "('errorhandler')());"],
+      [null,   '}'],
+    ],
+    findings: [
+      { line: 8,  sev: 'CRITICAL', id: 'SECOS-2191', agent: 'Sentinel',  msg: 'Hardcoded Stripe API key',  body: 'Shipping production secrets in source is the #1 cause of credential leaks on GitHub. Move to `process.env.STRIPE_SECRET_KEY` and rotate the key in Stripe.', fix: 'const API_KEY = process.env.STRIPE_SECRET_KEY;' },
+      { line: 9,  sev: 'CRITICAL', id: 'SECOS-2192', agent: 'Sentinel',  msg: 'Hardcoded JWT secret', body: 'A guessable JWT secret lets anyone forge tokens. Use a 256-bit random value loaded from your secret manager.', fix: 'const JWT_SECRET = process.env.JWT_SECRET;' },
+      { line: 11, sev: 'HIGH',     id: 'SECOS-2193', agent: 'Sentinel',  msg: 'CORS wildcard origin',     body: 'Allowing any origin lets any website make credentialed requests to your API. Pin to your real domains.', fix: 'cors({ origin: ["https://yourapp.com"] })' },
+      { line: 14, sev: 'CRITICAL', id: 'SECOS-2194', agent: 'Sentinel',  msg: 'SQL injection via string interpolation', body: 'User input flows directly into the SQL string. Sending `\\\' OR 1=1; --` returns every row. Use parameter binding.', fix: 'db.query("SELECT * FROM users WHERE email = $1", [email])' },
+      { line: 16, sev: 'HIGH',     id: 'SECOS-2195', agent: 'Sentinel',  msg: 'Plaintext password comparison', body: 'Passwords must be hashed (bcrypt/argon2) and compared with a constant-time function.', fix: 'await bcrypt.compare(password, user.password)' },
+      { line: 22, sev: 'MEDIUM',   id: 'SECOS-2196', agent: 'Sentinel',  msg: 'Verbose error handler leaks stack traces', body: 'errorhandler exposes filesystem paths and library versions on errors. Use a structured logger instead.', fix: 'app.use(structuredErrorLogger())' },
+    ],
+  },
+
+  flask: {
+    name: 'app.py',
+    lang: 'Python · Flask',
+    lines: [
+      ['com',  '# app.py — todo API generated by Claude Code'],
+      [null,   ''],
+      ['kw',   "from ", null, 'flask ', 'kw', 'import ', null, 'Flask, request, jsonify'],
+      ['kw',   "import ", null, 'sqlite3, os'],
+      [null,   ''],
+      [null,   'app = Flask(__name__)'],
+      ['kw',   'DEBUG ', null, '= ', 'kw', 'True'],
+      [null,   ''],
+      ['kw',   "@app", null, '.route(', 'str', "'/users/<id>'", null, ')'],
+      ['kw',   'def ', 'fn', 'get_user', null, '(id):'],
+      [null,   '    conn = sqlite3.connect(', 'str', "'app.db'", null, ')'],
+      [null,   '    query = ', 'str', 'f"SELECT * FROM users WHERE id = \'{id}\'"'],
+      [null,   '    result = conn.execute(query).fetchall()'],
+      [null,   '    ', 'kw', 'return ', null, 'jsonify(result)'],
+      [null,   ''],
+      ['kw',   "@app", null, '.route(', 'str', "'/avatar'", null, ", methods=[", 'str', "'POST'", null, '])'],
+      ['kw',   'def ', 'fn', 'upload', null, '():'],
+      [null,   '    filename = request.files[', 'str', "'file'", null, '].filename'],
+      [null,   '    path = ', 'str', 'f"/uploads/{filename}"'],
+      [null,   '    request.files[', 'str', "'file'", null, '].save(path)'],
+      [null,   '    ', 'kw', 'return ', null, 'jsonify({', 'str', '"url"', null, ': path})'],
+      [null,   ''],
+      ['kw',   'if ', null, '__name__ == ', 'str', "'__main__'", null, ':'],
+      [null,   '    app.run(host=', 'str', "'0.0.0.0'", null, ', debug=DEBUG)'],
+    ],
+    findings: [
+      { line: 7,  sev: 'MEDIUM',   id: 'SECOS-3010', agent: 'Sentinel', msg: 'Debug mode enabled in production', body: 'Flask debug mode exposes a remote Python console. If `DEBUG` is left True on a deployed server, anyone who can hit a route can execute arbitrary code.', fix: 'DEBUG = os.getenv("DEBUG", "false").lower() == "true"' },
+      { line: 12, sev: 'CRITICAL', id: 'SECOS-3011', agent: 'Sentinel', msg: 'SQL injection via f-string',  body: 'The user-controlled `id` is interpolated into the SQL string. Use parameterized queries.', fix: "conn.execute('SELECT * FROM users WHERE id = ?', (id,))" },
+      { line: 18, sev: 'HIGH',     id: 'SECOS-3012', agent: 'Sentinel', msg: 'Unsanitized filename in upload path', body: 'A user-supplied filename like `../../etc/passwd` lets the attacker write outside /uploads. Use `werkzeug.secure_filename`.', fix: 'filename = secure_filename(request.files["file"].filename)' },
+      { line: 24, sev: 'HIGH',     id: 'SECOS-3013', agent: 'Sentinel', msg: 'Bound to 0.0.0.0 with debug', body: 'Listening on all interfaces with debug=True means anyone on the network can reach the debugger.', fix: "app.run(host='127.0.0.1', debug=DEBUG)" },
+    ],
+  },
+
+  react: {
+    name: 'Settings.tsx',
+    lang: 'TypeScript · React',
+    lines: [
+      ['com',  '// Settings.tsx — generated by Lovable'],
+      [null,   ''],
+      ['kw',   'import ', null, '{ useState } ', 'kw', 'from ', 'str', "'react'", null, ';'],
+      [null,   ''],
+      ['kw',   'const ', null, 'SUPABASE_KEY = ', 'str', '"eyJhbGciOiJIUzI1NiIsInR5cCI6IkpXVCJ9..."', null, ';'],
+      [null,   ''],
+      ['kw',   'export default function ', 'fn', 'Settings', null, '() {'],
+      [null,   '  ', 'kw', 'const ', null, '[bio, setBio] = ', 'fn', 'useState', null, '(', 'str', "''", null, ');'],
+      [null,   ''],
+      [null,   '  ', 'kw', 'const ', null, 'save = ', 'kw', 'async ', null, '() => {'],
+      [null,   '    ', 'kw', 'const ', null, 'res = ', 'kw', 'await ', 'fn', 'fetch', null, '(', 'str', "'/api/profile'", null, ', {'],
+      [null,   '      method: ', 'str', "'POST'", null, ','],
+      [null,   '      body: ', 'fn', 'JSON.stringify', null, '({ bio })'],
+      [null,   '    });'],
+      [null,   '  };'],
+      [null,   ''],
+      [null,   '  ', 'kw', 'return ', null, '('],
+      [null,   '    <div dangerouslySetInnerHTML={{ __html: bio }} />'],
+      [null,   '  );'],
+      [null,   '}'],
+    ],
+    findings: [
+      { line: 5,  sev: 'CRITICAL', id: 'SECOS-4001', agent: 'Sentinel', msg: 'Service-role Supabase key in client bundle', body: 'Anything imported into a React component ships to the browser. This key gives full admin access to your database — anyone viewing source gets it.', fix: 'Use the anon key on the client. Keep the service key on a server route only.' },
+      { line: 11, sev: 'HIGH',     id: 'SECOS-4002', agent: 'Sentinel', msg: 'Missing CSRF token on state-changing POST', body: 'No CSRF protection on /api/profile. A malicious site can submit on the user\'s behalf via fetch + cookies.', fix: 'headers: { "X-CSRF-Token": csrfToken }' },
+      { line: 17, sev: 'CRITICAL', id: 'SECOS-4003', agent: 'Sentinel', msg: 'XSS via dangerouslySetInnerHTML', body: 'User-controlled `bio` flows directly into innerHTML. Any user can inject <script> and steal session tokens from other users.', fix: 'Use DOMPurify.sanitize(bio) or render as plain text.' },
+    ],
+  },
+};
+
+let currentSnippet = 'express';
+let currentFindings = [];
+let scanRunning = false;
+
+// ============ rendering ============
+function renderCode() {
+  const snippet = SNIPPETS[currentSnippet];
+  const body = document.getElementById('ed-body');
+
+  // hide annotations until scan reveals them
+  const findingsByLine = {};
+  currentFindings.forEach(f => { findingsByLine[f.line] = f; });
+
+  const gutter = snippet.lines.map((_, i) => {
+    const ln = i + 1;
+    const f = findingsByLine[ln];
+    const cls = f ? 'ln has-finding' : 'ln';
+    const style = f ? `--sev-color: var(--${sevVar(f.sev)});` : '';
+    return `<div class="${cls}" data-line="${ln}" style="${style}">${ln}</div>`;
+  }).join('');
+
+  const src = snippet.lines.map((parts, i) => {
+    const ln = i + 1;
+    const f = findingsByLine[ln];
+    let html = parts.map((p, idx) => {
+      if (p === null) return '';
+      // parts are alternating: class, text, class, text ...
+      // odd index = class (skip if previous was null/text)
+      if (idx % 2 === 0) return '';
+      const cls = parts[idx - 1];
+      const text = escapeHtml(p);
+      return cls ? `<span class="${cls}">${text}</span>` : text;
+    }).join('');
+    // simpler: just concatenate alternating class,text
+    html = renderLineHtml(parts);
+    const cls = f && !f.applied ? `line has-finding` : 'line';
+    const style = f ? `--sev-color: var(--${sevVar(f.sev)}); --sev-bg: ${sevBg(f.sev)};` : '';
+    let annHtml = '';
+    if (f) {
+      const appliedCls = f.applied ? ' applied' : '';
+      annHtml = `
+        <div class="ann${appliedCls}" data-finding="${f.id}" style="--sev-color: var(--${sevVar(f.sev)});">
+          <div class="ann-h">
+            <span>${f.sev}</span>
+            <span class="id">${f.id} · ${f.agent}</span>
+          </div>
+          <div class="ann-body"><strong>${escapeHtml(f.msg)}.</strong> ${escapeHtml(f.body)}</div>
+          ${f.applied ? '' : `
+            <div class="ann-fix">
+              <code style="font-family:var(--font-mono);font-size:12px;background:rgba(0,0,0,0.4);padding:4px 8px;border-radius:4px;color:var(--success);flex:1;overflow:auto;white-space:nowrap;">${escapeHtml(f.fix)}</code>
+              <button class="btn btn-primary btn-sm" data-apply="${f.id}">Apply</button>
+            </div>
+          `}
+        </div>
+      `;
+    }
+    return `<span class="${cls}" data-line="${ln}" style="${style}">${html || '&nbsp;'}</span>${annHtml}`;
+  }).join('');
+
+  body.innerHTML = `
+    <div class="code">
+      <div class="gutter">${gutter}</div>
+      <div class="src">${src}</div>
+    </div>
+  `;
+
+  // wire apply buttons
+  body.querySelectorAll('[data-apply]').forEach(btn => {
+    btn.addEventListener('click', (e) => {
+      e.stopPropagation();
+      const fid = btn.dataset.apply;
+      applyFix(fid);
+    });
+  });
+
+  // wire gutter clicks → jump to annotation
+  body.querySelectorAll('.gutter .ln.has-finding').forEach(g => {
+    g.addEventListener('click', () => {
+      const ln = parseInt(g.dataset.line, 10);
+      const ann = body.querySelector(`.line[data-line="${ln}"]`);
+      if (ann) ann.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+}
+
+function renderLineHtml(parts) {
+  let html = '';
+  for (let i = 0; i < parts.length; i += 2) {
+    const cls = parts[i];
+    const text = parts[i + 1] || '';
+    if (cls === null) html += escapeHtml(text);
+    else html += `<span class="${cls}">${escapeHtml(text)}</span>`;
+  }
+  return html;
+}
+
+function escapeHtml(s) {
+  return String(s).replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c]));
+}
+
+function sevVar(s) { return ({ CRITICAL: 'primary', HIGH: 'warning', MEDIUM: 'secondary', LOW: 'muted' })[s]; }
+function sevBg(s)  { return ({ CRITICAL: 'rgba(255,68,68,0.05)', HIGH: 'rgba(255,170,0,0.04)', MEDIUM: 'rgba(68,136,255,0.04)' })[s] || 'transparent'; }
+
+// ============ agents pane ============
+function renderAgents() {
+  const pane = document.getElementById('agents-pick');
+  pane.innerHTML = AGENTS.map(a => `
+    <div class="ag ${a.enabled ? 'on' : ''} ${a.tier !== 'free' ? 'locked' : ''}" data-id="${a.id}" title="${a.tier !== 'free' ? 'Requires ' + a.tier.toUpperCase() + ' plan' : ''}">
+      <div class="cb">
+        <svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="4" stroke-linecap="round" stroke-linejoin="round"><polyline points="20 6 9 17 4 12"/></svg>
+      </div>
+      <div class="ag-row">
+        <div style="display:flex;align-items:center;gap:8px;">
+          <span class="nm">${a.name}</span>
+          <span class="tier ${a.tier}">${a.tier}</span>
+        </div>
+        <div class="desc">${a.desc}</div>
+      </div>
+    </div>
+  `).join('');
+  pane.querySelectorAll('.ag').forEach(el => {
+    el.addEventListener('click', () => {
+      const a = AGENTS.find(x => x.id === el.dataset.id);
+      if (a.tier !== 'free') return;
+      a.enabled = !a.enabled;
+      renderAgents();
+      updateAgentCount();
+    });
+  });
+}
+
+function updateAgentCount() {
+  const en = AGENTS.filter(a => a.enabled).length;
+  document.getElementById('agent-count').textContent = `${en} active · ${9 - en} locked`;
+}
+
+// ============ findings pane ============
+function renderFindingsPane() {
+  const pane = document.getElementById('findings-pane');
+  const count = document.getElementById('finding-count');
+  if (!currentFindings.length) {
+    count.textContent = '0';
+    pane.innerHTML = `
+      <div class="empty-state">
+        <svg width="48" height="48" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.4" stroke-linecap="round" stroke-linejoin="round">
+          <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        </svg>
+        <div class="em-h">${scanRunning ? 'Scanning…' : 'No findings yet'}</div>
+        <div>${scanRunning ? 'Sentinel is checking 35 rules.' : 'Click <strong style="color:var(--primary)">Run scan</strong> to analyze.'}</div>
+      </div>
+    `;
+    return;
+  }
+  const sorted = [...currentFindings].sort((a,b) => {
+    const order = { CRITICAL: 0, HIGH: 1, MEDIUM: 2, LOW: 3 };
+    return order[a.sev] - order[b.sev];
+  });
+  count.textContent = `${currentFindings.filter(f => !f.applied).length} open · ${currentFindings.filter(f => f.applied).length} fixed`;
+  pane.innerHTML = sorted.map(f => `
+    <div class="finding-card ${f.applied ? 'applied' : ''}" data-id="${f.id}" data-line="${f.line}" style="--sev-color: var(--${sevVar(f.sev)});">
+      <div class="fc-h">
+        <span class="fc-sev sev-${f.sev}">${f.sev}</span>
+        <span class="fc-loc">${SNIPPETS[currentSnippet].name}:${f.line}</span>
+      </div>
+      <div class="fc-body">${escapeHtml(f.msg)}</div>
+      <div class="fc-agent">${f.id} · ${f.agent}</div>
+    </div>
+  `).join('');
+  pane.querySelectorAll('.finding-card').forEach(c => {
+    c.addEventListener('click', () => {
+      const ln = parseInt(c.dataset.line, 10);
+      const target = document.querySelector(`.src .line[data-line="${ln}"]`);
+      if (target) target.scrollIntoView({ behavior: 'smooth', block: 'center' });
+    });
+  });
+}
+
+function applyFix(fid) {
+  const f = currentFindings.find(x => x.id === fid);
+  if (!f) return;
+  f.applied = true;
+  renderCode();
+  renderFindingsPane();
+}
+
+// ============ scan ============
+async function runScan() {
+  if (scanRunning) return;
+  const enabledIds = AGENTS.filter(a => a.enabled).map(a => a.id);
+  if (!enabledIds.includes('sentinel')) {
+    alert('Enable Sentinel to scan.');
+    return;
+  }
+  scanRunning = true;
+  currentFindings = [];
+  renderCode();
+  renderFindingsPane();
+  document.getElementById('run-btn').disabled = true;
+  document.getElementById('run-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3" stroke-linecap="round"><circle cx="12" cy="12" r="9" opacity="0.3"/><path d="M12 3a9 9 0 019 9"/></svg> Scanning';
+
+  const progress = document.getElementById('progress');
+  progress.style.opacity = '1';
+  progress.style.width = '0%';
+  await wait(50);
+  progress.style.width = '30%';
+
+  const allFindings = SNIPPETS[currentSnippet].findings.map(f => ({ ...f, applied: false }));
+  for (let i = 0; i < allFindings.length; i++) {
+    await wait(280 + Math.random() * 200);
+    progress.style.width = `${30 + (i + 1) / allFindings.length * 65}%`;
+    currentFindings = allFindings.slice(0, i + 1);
+    renderCode();
+    renderFindingsPane();
+  }
+  await wait(200);
+  progress.style.width = '100%';
+  await wait(250);
+  progress.style.opacity = '0';
+
+  scanRunning = false;
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Re-run scan';
+}
+
+function reset() {
+  currentFindings = [];
+  scanRunning = false;
+  renderCode();
+  renderFindingsPane();
+  document.getElementById('run-btn').disabled = false;
+  document.getElementById('run-btn').innerHTML = '<svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M8 5v14l11-7z"/></svg> Run scan';
+}
+
+function wait(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+// ============ tabs ============
+document.getElementById('ed-tabs').querySelectorAll('.ed-tab').forEach(t => {
+  t.addEventListener('click', () => {
+    document.getElementById('ed-tabs').querySelectorAll('.ed-tab').forEach(x => x.classList.remove('active'));
+    t.classList.add('active');
+    currentSnippet = t.dataset.snippet;
+    currentFindings = [];
+    renderCode();
+    renderFindingsPane();
+  });
+});
+
+document.getElementById('run-btn').addEventListener('click', runScan);
+document.getElementById('reset-btn').addEventListener('click', reset);
+
+// init
+renderAgents();
+updateAgentCount();
+renderCode();
+renderFindingsPane();
+</script>
+</body>
+</html>

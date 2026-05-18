@@ -1,0 +1,591 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Quickstart — SecureOS Docs</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --surface: #0f0f0f; --surface-2: #131313;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 15px; line-height: 1.7; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; }
+  a:not(.plain) { color: var(--secondary); text-decoration: none; }
+  a:not(.plain):hover { color: #6aa0ff; }
+  a.plain { text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  code { font-family: var(--font-mono); font-size: 0.9em; background: rgba(255,255,255,0.05); padding: 2px 7px; border-radius: 4px; color: var(--text); }
+  ::selection { background: rgba(68,136,255,0.35); }
+
+  /* nav */
+  .nav { height: 64px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; text-decoration: none; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .crumb a { color: var(--muted); text-decoration: none; }
+  .crumb a:hover { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  .nav-links a { text-decoration: none; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all .15s ease; text-decoration: none; }
+  .btn-primary { background: var(--primary); color: #fff !important; }
+  .btn-primary:hover { background: #ff5959; color: #fff !important; }
+
+  /* layout */
+  .doc-layout {
+    display: grid;
+    grid-template-columns: 260px 1fr 220px;
+    max-width: 1280px;
+    margin: 0 auto;
+    padding: 0 24px;
+    gap: 48px;
+  }
+  .doc-side {
+    padding: 40px 0;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    border-right: 1px solid var(--border);
+    margin-right: -24px;
+    padding-right: 24px;
+  }
+  .doc-side-h { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; margin-top: 20px; }
+  .doc-side-h:first-child { margin-top: 0; }
+  .doc-side a {
+    display: block; padding: 6px 10px; border-radius: 6px;
+    font-size: 13.5px; color: var(--text-2);
+    text-decoration: none;
+    transition: all .12s ease;
+  }
+  .doc-side a:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+  .doc-side a.current {
+    background: rgba(255,68,68,0.08);
+    color: var(--primary);
+  }
+  .doc-side a .badge { font-family: var(--font-mono); font-size: 10px; padding: 0 5px; border-radius: 3px; margin-left: 6px; background: rgba(68,204,136,0.12); color: var(--success); }
+
+  .doc-main {
+    padding: 60px 0 120px;
+    max-width: 720px;
+    min-width: 0;
+  }
+  .doc-eyebrow { font-size: 13px; color: var(--muted); margin-bottom: 14px; }
+  .doc-main h1 { font-size: 42px; font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; margin-bottom: 18px; }
+  .doc-lede { font-size: 18px; color: var(--text-2); line-height: 1.55; margin-bottom: 36px; text-wrap: pretty; }
+  .doc-main h2 { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 56px; margin-bottom: 18px; padding-top: 20px; border-top: 1px solid var(--border); }
+  .doc-main h2:first-of-type { border-top: 0; padding-top: 0; }
+  .doc-main h3 { font-size: 18px; font-weight: 600; margin-top: 32px; margin-bottom: 12px; }
+  .doc-main p { color: var(--text-2); margin-bottom: 16px; line-height: 1.7; }
+  .doc-main ul, .doc-main ol { color: var(--text-2); padding-left: 20px; margin-bottom: 16px; }
+  .doc-main li { margin-bottom: 6px; }
+  .doc-main strong { color: var(--text); font-weight: 600; }
+
+  /* code blocks */
+  .code-block {
+    background: linear-gradient(180deg, #0a0a0a, #050505);
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    overflow: hidden;
+    margin: 20px 0 24px;
+  }
+  .cb-head {
+    display: flex; align-items: center; gap: 10px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.02);
+    font-family: var(--font-mono);
+    font-size: 12px;
+    color: var(--muted);
+  }
+  .cb-head .lang {
+    font-size: 10.5px; padding: 1px 7px;
+    background: rgba(255,255,255,0.04);
+    border-radius: 4px;
+    color: var(--text-2);
+  }
+  .cb-copy {
+    margin-left: auto;
+    font-size: 11px;
+    font-family: var(--font-sans);
+    color: var(--muted);
+    padding: 3px 8px;
+    border-radius: 4px;
+    border: 1px solid var(--border);
+    background: transparent;
+    cursor: pointer;
+  }
+  .cb-copy:hover { background: rgba(255,255,255,0.03); color: var(--text); }
+  .cb-copy.copied { color: var(--success); border-color: rgba(68,204,136,0.4); }
+  .cb-body {
+    padding: 16px 18px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    overflow-x: auto;
+    color: #d5d5d5;
+    white-space: pre;
+  }
+  .cb-body .prompt { color: var(--success); user-select: none; }
+  .cb-body .comment { color: var(--muted); }
+  .cb-body .out { color: var(--muted); }
+  .cb-body .kw { color: #b285ff; }
+  .cb-body .str { color: #6cdc8f; }
+  .cb-body .yaml-key { color: #88c8ff; }
+
+  /* callouts */
+  .callout {
+    border-left: 3px solid var(--secondary);
+    background: rgba(68,136,255,0.04);
+    padding: 14px 18px;
+    border-radius: 6px;
+    margin: 18px 0 24px;
+    font-size: 14px;
+    color: var(--text-2);
+  }
+  .callout strong { color: var(--secondary); }
+  .callout.warn { border-color: var(--warning); background: rgba(255,170,0,0.05); }
+  .callout.warn strong { color: var(--warning); }
+  .callout.success { border-color: var(--success); background: rgba(68,204,136,0.05); }
+  .callout.success strong { color: var(--success); }
+
+  /* steps */
+  .step-card {
+    display: grid;
+    grid-template-columns: 36px 1fr;
+    gap: 18px;
+    margin: 28px 0;
+    padding-top: 8px;
+  }
+  .step-num {
+    width: 32px; height: 32px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    font-family: var(--font-mono);
+    font-size: 13px;
+    display: grid; place-items: center;
+    color: var(--text);
+  }
+  .step-card h3 { margin-top: 0; }
+
+  /* product mock — for screenshot-style inline UI */
+  .ui-mock {
+    border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    background: linear-gradient(180deg, #0a0a0a, #060606);
+    margin: 20px 0 24px;
+    overflow: hidden;
+  }
+  .ui-mock-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 10px 14px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .ui-mock-dot { width: 10px; height: 10px; border-radius: 50%; background: #2a2a2a; }
+  .ui-mock-dot.r { background: #ff5f57; } .ui-mock-dot.y { background: #febc2e; } .ui-mock-dot.g { background: #28c840; }
+  .ui-mock-url {
+    margin-left: 12px;
+    font-family: var(--font-mono);
+    font-size: 11.5px;
+    color: var(--muted);
+  }
+  .ui-mock-body { padding: 22px 24px; }
+  .gh-row {
+    padding: 14px;
+    border: 1px solid var(--border); border-radius: 8px;
+    display: flex; align-items: center; gap: 14px;
+    margin-bottom: 8px;
+  }
+  .gh-row .gh-name { font-family: var(--font-mono); font-size: 13px; font-weight: 500; }
+  .gh-row .gh-meta { font-size: 12px; color: var(--muted); margin-top: 2px; }
+  .gh-row .check {
+    margin-left: auto;
+    width: 22px; height: 22px; border-radius: 50%;
+    background: rgba(68,204,136,0.12);
+    color: var(--success);
+    display: grid; place-items: center;
+  }
+
+  /* right ToC */
+  .doc-toc {
+    padding: 60px 0;
+    position: sticky;
+    top: 64px;
+    height: calc(100vh - 64px);
+    overflow-y: auto;
+    font-size: 13px;
+  }
+  .doc-toc-h { font-size: 11px; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 14px; }
+  .doc-toc a {
+    display: block; padding: 4px 0;
+    color: var(--muted); text-decoration: none;
+    border-left: 1px solid var(--border);
+    padding-left: 12px;
+    margin-left: -1px;
+    line-height: 1.5;
+  }
+  .doc-toc a:hover { color: var(--text-2); }
+  .doc-toc a.active { color: var(--primary); border-left-color: var(--primary); }
+
+  /* next/prev */
+  .doc-nav-foot {
+    margin-top: 72px; padding-top: 32px;
+    border-top: 1px solid var(--border);
+    display: flex; justify-content: space-between; gap: 16px; flex-wrap: wrap;
+  }
+  .doc-nav-link {
+    padding: 16px 20px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    text-decoration: none;
+    flex: 1;
+    transition: all .15s ease;
+    min-width: 200px;
+  }
+  .doc-nav-link:hover { border-color: var(--border-strong); background: rgba(255,255,255,0.02); }
+  .doc-nav-link .lbl { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 4px; }
+  .doc-nav-link .title { color: var(--text); font-weight: 500; font-size: 14.5px; }
+
+  /* footer */
+  .footer { border-top: 1px solid var(--border); padding: 36px 0; }
+  .footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .footer-copy { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 1100px) {
+    .doc-layout { grid-template-columns: 240px 1fr; }
+    .doc-toc { display: none; }
+  }
+  @media (max-width: 760px) {
+    .doc-layout { grid-template-columns: 1fr; padding: 0 16px; gap: 0; }
+    .doc-side { display: none; }
+    .doc-main { padding: 40px 0 80px; }
+    .doc-main h1 { font-size: 32px; }
+    .nav-links { display: none; }
+    .crumb { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="../SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span class="sep">/</span>
+        <a href="quickstart.html">Docs</a>
+        <span class="sep">/</span>
+        <span class="here">Quickstart</span>
+      </span>
+    </div>
+    <div class="nav-links">
+      <a href="../SecureOS Landing.html#agents">Agents</a>
+      <a href="../playground.html">Playground</a>
+      <a href="../SecureOS Landing.html#pricing">Pricing</a>
+    </div>
+    <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" class="btn btn-primary" style="height:34px;font-size:13px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.72.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96z"/></svg>
+      Connect GitHub
+    </a>
+  </div>
+</nav>
+
+<div class="doc-layout">
+
+  <!-- Sidebar -->
+  <aside class="doc-side">
+    <div class="doc-side-h">Getting started</div>
+    <a href="#" class="current">Quickstart</a>
+    <a href="#">Concepts</a>
+    <a href="#">CLI reference</a>
+
+    <div class="doc-side-h">Agents</div>
+    <a href="../agents/sentinel.html">Sentinel <span class="badge">FREE</span></a>
+    <a href="../agents/scout.html">Scout</a>
+    <a href="#">Architect</a>
+    <a href="#">Auditor</a>
+    <a href="#">Penetrator</a>
+    <a href="#">Launcher</a>
+    <a href="#">Compliance Officer</a>
+    <a href="#">Incident Responder</a>
+    <a href="#">Educator <span class="badge">FREE</span></a>
+
+    <div class="doc-side-h">Integrations</div>
+    <a href="#">GitHub Actions</a>
+    <a href="#">VS Code extension</a>
+    <a href="#">Cursor</a>
+    <a href="#">Claude Code</a>
+
+    <div class="doc-side-h">Reference</div>
+    <a href="../changelog.html">Changelog</a>
+    <a href="../security.html">Our security</a>
+    <a href="https://github.com/Ali2191/vibeguard" target="_blank">GitHub</a>
+  </aside>
+
+  <!-- Main -->
+  <main class="doc-main">
+    <div class="doc-eyebrow">Getting started</div>
+    <h1>Quickstart</h1>
+    <p class="doc-lede">Get SecureOS running on your repo in under 3 minutes. By the end of this guide your next push will be scanned automatically and findings will land in your PRs.</p>
+
+    <h2 id="install">Install</h2>
+    <p>SecureOS is two things: a hosted control plane that watches your repos, and an open-source CLI (Sentinel) you can run anywhere. You can use either or both. Pick your install path:</p>
+
+    <h3>Option 1 — Hosted (recommended)</h3>
+    <p>No install. Sign in with GitHub, pick a repo, done.</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>terminal</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> open https://app.secureos.dev</div>
+    </div>
+
+    <h3>Option 2 — CLI only</h3>
+    <p>Install the Sentinel binary and run scans locally. No account needed.</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>macOS · brew</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> brew install secureos/tap/sentinel</div>
+    </div>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>Linux · curl</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> curl -fsSL https://secureos.dev/install.sh | sh</div>
+    </div>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>npm</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> npm install -g @secureos/sentinel</div>
+    </div>
+
+    <div class="callout"><strong>Heads up.</strong> The CLI is fully open source. The hosted plane adds the other 8 agents, the dashboard, and PR integration on top.</div>
+
+    <h2 id="connect">Connect GitHub</h2>
+    <p>Authorize the SecureOS GitHub App. Read-only on code, write-only on PR comments. We never push commits to your repo without confirmation.</p>
+
+    <div class="step-card">
+      <div class="step-num">1</div>
+      <div>
+        <h3>Authorize</h3>
+        <p>Visit <a href="#">app.secureos.dev/auth/github</a> and approve the install for the org or account you want to protect.</p>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">2</div>
+      <div>
+        <h3>Pick repos</h3>
+        <p>Choose the repos to enable. You can change this anytime.</p>
+
+        <div class="ui-mock">
+          <div class="ui-mock-head">
+            <span class="ui-mock-dot r"></span><span class="ui-mock-dot y"></span><span class="ui-mock-dot g"></span>
+            <span class="ui-mock-url">app.secureos.dev/setup/repos</span>
+          </div>
+          <div class="ui-mock-body">
+            <div style="font-size:13px;color:var(--muted);margin-bottom:14px;letter-spacing:0.08em;text-transform:uppercase;">Select repositories · 3 of 12</div>
+            <div class="gh-row">
+              <div><div class="gh-name">acme/my-saas-app</div><div class="gh-meta">private · last push 2 hours ago</div></div>
+              <span class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+            </div>
+            <div class="gh-row">
+              <div><div class="gh-name">acme/landing-v3</div><div class="gh-meta">public · last push 6 hours ago</div></div>
+              <span class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+            </div>
+            <div class="gh-row">
+              <div><div class="gh-name">acme/api-gateway</div><div class="gh-meta">private · last push 1 day ago</div></div>
+              <span class="check"><svg width="11" height="11" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3.5"><polyline points="20 6 9 17 4 12"/></svg></span>
+            </div>
+          </div>
+        </div>
+      </div>
+    </div>
+
+    <div class="step-card">
+      <div class="step-num">3</div>
+      <div>
+        <h3>That's it</h3>
+        <p>The webhook is installed. Sentinel runs on every push and PR. No YAML, no commits to your repo.</p>
+        <div class="callout success"><strong>Done.</strong> Open a PR with anything and you'll see Sentinel comment within seconds.</div>
+      </div>
+    </div>
+
+    <h2 id="first-scan">Your first scan</h2>
+    <p>You don't need to wait for a push. Trigger a one-shot scan to see what Sentinel finds in your current main branch.</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>scan current repo</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> secureos scan
+<span class="out">→ sentinel · loading rulepack v2024.11</span>
+<span class="out">→ scanning ./</span>
+<span class="out">→ 47 files in 1.2s</span>
+
+<span class="out">CRITICAL  auth.js:12     Hardcoded Stripe key</span>
+<span class="out">CRITICAL  db.py:34       SQL injection via string concat</span>
+<span class="out">HIGH      config.js:8    CORS wildcard origin</span>
+<span class="out">MEDIUM    app.py:156     Debug mode enabled</span>
+
+<span class="out">4 issues · 2 critical · 1 high · 1 medium</span>
+<span class="out">→ run </span><span class="kw">secureos fix &lt;id&gt;</span><span class="out"> to apply suggested fixes</span></div>
+    </div>
+
+    <h3>Apply fixes</h3>
+    <p>Findings are numbered. Apply a fix in one line:</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>fix finding #2</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> secureos fix 2
+<span class="out">→ generating patch for db.py:34</span>
+<span class="out">→ applied. commit a4f2c9a</span></div>
+    </div>
+
+    <div class="callout warn"><strong>Note.</strong> Critical findings (hardcoded secrets, JWT keys) need your eyes. Sentinel will show the suggested patch and wait for confirmation. Use <code>--auto</code> if you've reviewed and want batch application.</div>
+
+    <h2 id="actions">GitHub Actions</h2>
+    <p>Hosted SecureOS installs its webhook automatically. If you prefer to manage your own CI, drop this into <code>.github/workflows/secureos.yml</code>:</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>.github/workflows/secureos.yml</span>
+        <span class="lang">yaml</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="yaml-key">name:</span> SecureOS
+<span class="yaml-key">on:</span> [push, pull_request]
+
+<span class="yaml-key">jobs:</span>
+  <span class="yaml-key">scan:</span>
+    <span class="yaml-key">runs-on:</span> ubuntu-latest
+    <span class="yaml-key">steps:</span>
+      - <span class="yaml-key">uses:</span> actions/checkout@v4
+      - <span class="yaml-key">uses:</span> secureos/sentinel-action@v2
+        <span class="yaml-key">with:</span>
+          <span class="yaml-key">fail-on:</span> <span class="str">critical,high</span>
+          <span class="yaml-key">comment-pr:</span> <span class="kw">true</span></div>
+    </div>
+
+    <h2 id="editor">Editor integration</h2>
+    <p>Findings inline, while you type. The VS Code extension works in Cursor too.</p>
+    <div class="code-block">
+      <div class="cb-head">
+        <span>VS Code marketplace</span>
+        <span class="lang">shell</span>
+        <button class="cb-copy">Copy</button>
+      </div>
+      <div class="cb-body"><span class="prompt">$</span> code --install-extension secureos.sentinel</div>
+    </div>
+
+    <h2 id="next">Where next</h2>
+    <p>That's the whole quickstart. From here:</p>
+    <ul>
+      <li>Try the <a href="../playground.html">playground</a> with a paste of your code, no install needed.</li>
+      <li>Read the <a href="../agents/sentinel.html">Sentinel rules reference</a>.</li>
+      <li>If you're pre-launch, run <a href="../agents/scout.html">Scout</a> to threat-model your stack.</li>
+    </ul>
+
+    <div class="doc-nav-foot">
+      <a href="#" class="doc-nav-link">
+        <div class="lbl">Next</div>
+        <div class="title">Concepts → How the agents fit together</div>
+      </a>
+      <a href="../agents/sentinel.html" class="doc-nav-link" style="text-align:right;">
+        <div class="lbl">Agent reference</div>
+        <div class="title">Sentinel — the 35 rules</div>
+      </a>
+    </div>
+  </main>
+
+  <!-- Right ToC -->
+  <aside class="doc-toc">
+    <div class="doc-toc-h">On this page</div>
+    <a href="#install" class="active">Install</a>
+    <a href="#connect">Connect GitHub</a>
+    <a href="#first-scan">Your first scan</a>
+    <a href="#actions">GitHub Actions</a>
+    <a href="#editor">Editor integration</a>
+    <a href="#next">Where next</a>
+  </aside>
+</div>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="../SecureOS Landing.html" class="logo">
+      <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+      Secure<span class="red">OS</span>
+    </a>
+    <div class="footer-copy">© 2026 SecureOS · secureos.dev</div>
+  </div>
+</footer>
+
+<script>
+// copy buttons
+document.querySelectorAll('.cb-copy').forEach(btn => {
+  btn.addEventListener('click', async () => {
+    const body = btn.closest('.code-block').querySelector('.cb-body');
+    const text = body.textContent.replace(/^\$\s/, '').replace(/^→.*$/gm, '').trim();
+    try {
+      await navigator.clipboard.writeText(text);
+      const orig = btn.textContent;
+      btn.textContent = 'Copied';
+      btn.classList.add('copied');
+      setTimeout(() => { btn.textContent = 'Copy'; btn.classList.remove('copied'); }, 1500);
+    } catch (e) {}
+  });
+});
+
+// scroll-spy for right ToC
+const headings = ['install','connect','first-scan','actions','editor','next']
+  .map(id => document.getElementById(id)).filter(Boolean);
+const tocLinks = document.querySelectorAll('.doc-toc a');
+function syncToc() {
+  let current = headings[0]?.id;
+  for (const h of headings) {
+    if (h.getBoundingClientRect().top < 120) current = h.id;
+  }
+  tocLinks.forEach(a => a.classList.toggle('active', a.getAttribute('href') === '#' + current));
+}
+window.addEventListener('scroll', syncToc, { passive: true });
+syncToc();
+</script>
+</body>
+</html>

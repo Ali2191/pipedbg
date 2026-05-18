@@ -1,0 +1,634 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Sentinel — SecureOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --surface: #0f0f0f; --surface-2: #131313;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --container: 1100px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  ::selection { background: rgba(68,204,136,0.35); }
+
+  .container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  .nav { height: 64px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all .15s ease; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #ff5959; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.22); background: rgba(255,255,255,0.02); }
+  .btn-lg { height: 46px; padding: 0 22px; font-size: 15px; }
+
+  /* hero */
+  .hero { padding: 80px 0 60px; position: relative; }
+  .hero-glow { position: absolute; top: 0; left: 0; right: 0; height: 400px; background: radial-gradient(40% 80% at 50% 0%, rgba(68,204,136,0.10), transparent 70%); pointer-events: none; }
+  .hero-inner { position: relative; }
+
+  .agent-mark {
+    width: 56px; height: 56px; border-radius: 14px;
+    background: linear-gradient(135deg, rgba(68,204,136,0.15), rgba(68,204,136,0.04));
+    border: 1px solid rgba(68,204,136,0.3);
+    display: inline-grid; place-items: center;
+    margin-bottom: 24px;
+    color: var(--success);
+    box-shadow: 0 0 60px rgba(68,204,136,0.18);
+  }
+  .agent-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .pill { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; padding: 4px 9px; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; }
+  .pill .dot { width: 5px; height: 5px; border-radius: 50%; }
+  .pill-active { background: rgba(68,204,136,0.10); color: var(--success); border: 1px solid rgba(68,204,136,0.3); }
+  .pill-active .dot { background: var(--success); box-shadow: 0 0 8px var(--success); }
+  .pill-free { background: rgba(255,255,255,0.04); color: var(--text-2); border: 1px solid var(--border); }
+  .pill-os { background: rgba(68,136,255,0.10); color: var(--secondary); border: 1px solid rgba(68,136,255,0.28); }
+
+  h1.agent-h1 { font-size: clamp(44px, 6vw, 76px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; max-width: 800px; }
+  .agent-role { font-size: 18px; color: var(--muted); margin-top: 12px; }
+  .agent-lede { font-size: 18px; color: var(--text-2); margin-top: 26px; max-width: 640px; line-height: 1.55; text-wrap: pretty; }
+  .hero-cta { display: flex; gap: 12px; margin-top: 36px; flex-wrap: wrap; }
+
+  /* stats */
+  .stats { padding: 60px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-top: 60px; }
+  .stats-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 28px; }
+  .stat-num { font-size: 44px; font-weight: 600; letter-spacing: -0.03em; line-height: 1; color: var(--success); }
+  .stat-lbl { font-size: 13px; color: var(--muted); margin-top: 10px; }
+
+  /* sections */
+  .section { padding: 100px 0; }
+  .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .section-label::before { content: ""; width: 18px; height: 1px; background: var(--success); }
+  .section h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; max-width: 720px; }
+  .section .sub { color: var(--muted); font-size: 17px; max-width: 600px; margin-top: 18px; }
+
+  /* categories grid */
+  .cats { display: grid; grid-template-columns: repeat(3, 1fr); gap: 12px; margin-top: 50px; }
+  .cat {
+    padding: 22px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface); cursor: pointer;
+    transition: all .15s ease;
+  }
+  .cat:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  .cat.active { border-color: var(--success); background: rgba(68,204,136,0.04); }
+  .cat-h { display: flex; align-items: center; justify-content: space-between; margin-bottom: 12px; }
+  .cat-name { font-size: 15px; font-weight: 600; letter-spacing: -0.01em; }
+  .cat-count { font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .cat.active .cat-count { color: var(--success); }
+  .cat-desc { font-size: 13.5px; color: var(--muted); line-height: 1.55; }
+
+  /* code example */
+  .ex-wrap {
+    margin-top: 50px;
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #0a0a0a, #050505);
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+  .ex-head {
+    display: flex; align-items: center; gap: 8px;
+    padding: 12px 16px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .ex-dot { width: 11px; height: 11px; border-radius: 50%; background: #2a2a2a; }
+  .ex-dot.r { background: #ff5f57; } .ex-dot.y { background: #febc2e; } .ex-dot.g { background: #28c840; }
+  .ex-title { margin-left: 14px; font-family: var(--font-mono); font-size: 12px; color: var(--muted); }
+  .ex-body { display: grid; grid-template-columns: 1fr 1fr; gap: 0; min-height: 280px; }
+  .ex-col {
+    padding: 22px 24px;
+    font-family: var(--font-mono);
+    font-size: 13px;
+    line-height: 1.7;
+    white-space: pre;
+    overflow-x: auto;
+  }
+  .ex-col.before { border-right: 1px solid var(--border); }
+  .ex-col-h {
+    font-family: var(--font-sans);
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 14px;
+    font-weight: 500;
+    display: flex; align-items: center; gap: 8px;
+  }
+  .ex-col-h .dot { width: 6px; height: 6px; border-radius: 50%; }
+  .before .ex-col-h .dot { background: var(--primary); }
+  .after .ex-col-h .dot { background: var(--success); }
+  .before .ex-col-h { color: var(--primary); }
+  .after .ex-col-h { color: var(--success); }
+  .code-line { color: #d5d5d5; }
+  .code-line.del { color: #ff6c6c; background: rgba(255,68,68,0.06); }
+  .code-line.add { color: #6cdc8f; background: rgba(68,204,136,0.06); }
+  .code-line.com { color: var(--muted-2); }
+  .kw { color: #b285ff; } .str { color: #88c8ff; } .num { color: #ffaa00; }
+  .ex-foot { padding: 18px 24px; border-top: 1px solid var(--border); background: rgba(255,255,255,0.01); font-size: 14px; color: var(--text-2); }
+  .ex-foot strong { color: var(--success); }
+
+  /* rules table */
+  .rules-table { width: 100%; border-collapse: collapse; font-size: 14px; margin-top: 40px; border: 1px solid var(--border); border-radius: 12px; overflow: hidden; }
+  .rules-table th, .rules-table td { text-align: left; padding: 14px 18px; border-bottom: 1px solid var(--border); }
+  .rules-table th { background: rgba(255,255,255,0.02); font-weight: 500; font-size: 12px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .rules-table td { color: var(--text-2); }
+  .rules-table tr:last-child td { border-bottom: 0; }
+  .rules-table .rule-id { font-family: var(--font-mono); font-size: 12.5px; color: var(--muted); }
+  .rules-table .rule-sev { font-family: var(--font-mono); font-size: 11px; padding: 2px 6px; border-radius: 3px; }
+  .rules-table .rule-sev.c { color: var(--primary); background: rgba(255,68,68,0.08); }
+  .rules-table .rule-sev.h { color: var(--warning); background: rgba(255,170,0,0.08); }
+  .rules-table .rule-sev.m { color: var(--secondary); background: rgba(68,136,255,0.08); }
+  .rules-table .rule-sev.l { color: var(--muted); background: rgba(255,255,255,0.04); }
+
+  /* pair with */
+  .pair-grid { display: grid; grid-template-columns: repeat(3, 1fr); gap: 16px; margin-top: 40px; }
+  .pair-card {
+    padding: 24px; border: 1px solid var(--border); border-radius: 12px;
+    background: var(--surface);
+    transition: all .15s ease;
+    display: block;
+  }
+  .pair-card:hover { border-color: var(--border-strong); transform: translateY(-2px); }
+  .pair-card h4 { font-size: 16px; font-weight: 600; margin-bottom: 4px; }
+  .pair-card .role { font-size: 13px; color: var(--muted); margin-bottom: 12px; }
+  .pair-card .desc { font-size: 13.5px; color: var(--text-2); line-height: 1.55; }
+
+  /* CTA */
+  .cta-section {
+    padding: 100px 0; text-align: center;
+    background: radial-gradient(50% 100% at 50% 0%, rgba(68,204,136,0.06), transparent 70%);
+  }
+  .cta-section h2 { margin: 0 auto 16px; text-align: center; }
+  .cta-section .sub { margin: 0 auto 32px; text-align: center; }
+  .cta-row { display: inline-flex; gap: 12px; flex-wrap: wrap; justify-content: center; }
+
+  /* footer */
+  .footer { border-top: 1px solid var(--border); padding: 56px 0 36px; }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+  .footer-links { display: flex; gap: 22px; font-size: 14px; color: var(--muted); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 880px) {
+    .stats-grid, .cats, .pair-grid { grid-template-columns: 1fr 1fr; }
+    .ex-body { grid-template-columns: 1fr; }
+    .ex-col.before { border-right: 0; border-bottom: 1px solid var(--border); }
+    .nav-links { display: none; }
+    .section { padding: 70px 0; }
+  }
+  @media (max-width: 560px) {
+    .stats-grid, .cats, .pair-grid { grid-template-columns: 1fr; }
+    .crumb { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="../SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span class="sep">/</span>
+        <a href="../SecureOS Landing.html#agents">Agents</a>
+        <span class="sep">/</span>
+        <span class="here">Sentinel</span>
+      </span>
+    </div>
+    <div class="nav-links">
+      <a href="../SecureOS Landing.html#agents">Agents</a>
+      <a href="../playground.html">Playground</a>
+      <a href="../SecureOS Landing.html#pricing">Pricing</a>
+      <a href="../docs/quickstart.html">Docs</a>
+    </div>
+    <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" class="btn btn-primary" style="height:34px;font-size:13px;">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.72.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96.1-.75.4-1.25.72-1.54-2.55-.29-5.24-1.28-5.24-5.69 0-1.26.45-2.29 1.18-3.1-.12-.29-.51-1.46.11-3.05 0 0 .96-.31 3.15 1.18.91-.25 1.89-.38 2.86-.39.97.01 1.95.14 2.86.39 2.19-1.49 3.15-1.18 3.15-1.18.62 1.59.23 2.76.11 3.05.74.81 1.18 1.84 1.18 3.1 0 4.42-2.69 5.4-5.25 5.69.41.36.78 1.06.78 2.14v3.17c0 .31.21.66.79.55 4.56-1.53 7.85-5.84 7.85-10.91C23.5 5.65 18.35.5 12 .5z"/></svg>
+      GitHub
+    </a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <div class="agent-mark">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6" stroke-linecap="round" stroke-linejoin="round">
+        <path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/>
+        <path d="M9 12l2 2 4-4"/>
+      </svg>
+    </div>
+    <div class="agent-meta">
+      <span class="pill pill-active"><span class="dot"></span>Active</span>
+      <span class="pill pill-free">Free forever</span>
+      <span class="pill pill-os">Open source</span>
+    </div>
+    <h1 class="agent-h1">Sentinel</h1>
+    <div class="agent-role">Real-time code scanner</div>
+    <p class="agent-lede">
+      Runs 35+ security checks on every commit. Catches hardcoded secrets, SQL injection, auth bypasses, and the 22 other patterns AI coding tools introduce most often. The first agent every project gets — free, forever.
+    </p>
+    <div class="hero-cta">
+      <a href="../playground.html" class="btn btn-primary btn-lg">
+        Try Sentinel
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.5"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+      </a>
+      <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" class="btn btn-ghost btn-lg">
+        <svg width="14" height="14" viewBox="0 0 24 24" fill="currentColor"><path d="M12 .5C5.65.5.5 5.65.5 12c0 5.08 3.29 9.39 7.86 10.91.57.1.78-.25.78-.55v-2c-3.2.69-3.87-1.36-3.87-1.36-.52-1.33-1.27-1.69-1.27-1.69-1.04-.72.08-.7.08-.7 1.15.08 1.76 1.18 1.76 1.18 1.02 1.76 2.68 1.25 3.34.96z"/></svg>
+        View source
+      </a>
+    </div>
+  </div>
+</header>
+
+<section class="stats">
+  <div class="container stats-grid">
+    <div><div class="stat-num">35+</div><div class="stat-lbl">Detection rules</div></div>
+    <div><div class="stat-num">9</div><div class="stat-lbl">Languages</div></div>
+    <div><div class="stat-num">&lt;2s</div><div class="stat-lbl">Avg. scan time</div></div>
+    <div><div class="stat-num" style="color:var(--text);">$0</div><div class="stat-lbl">Forever</div></div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-label">What it catches</span>
+    <h2>9 categories. 35 rules. Updated weekly.</h2>
+    <p class="sub">Click any category to see a real before/after Sentinel applies the fix.</p>
+
+    <div class="cats" id="cats"></div>
+
+    <div class="ex-wrap" id="ex-wrap">
+      <div class="ex-head">
+        <span class="ex-dot r"></span><span class="ex-dot y"></span><span class="ex-dot g"></span>
+        <span class="ex-title" id="ex-title">secrets · auth.js</span>
+      </div>
+      <div class="ex-body" id="ex-body"></div>
+      <div class="ex-foot" id="ex-foot"></div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:40px;">
+  <div class="container">
+    <span class="section-label">Complete ruleset</span>
+    <h2>The 35 rules, in one table.</h2>
+    <table class="rules-table">
+      <thead>
+        <tr><th>Rule ID</th><th>Pattern</th><th>Category</th><th>Severity</th></tr>
+      </thead>
+      <tbody id="rules-tbody"></tbody>
+    </table>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-label">Better together</span>
+    <h2>Pair Sentinel with these agents.</h2>
+    <p class="sub">Sentinel finds problems in code you've written. These agents catch the ones before, around, and after it.</p>
+    <div class="pair-grid">
+      <a href="scout.html" class="pair-card">
+        <h4>Scout <span style="color:var(--secondary);font-size:11px;letter-spacing:0.08em;margin-left:6px;">PRO</span></h4>
+        <div class="role">Pre-build threat modeler</div>
+        <div class="desc">Maps your attack surface before you write a line of code. Tells Sentinel which rules matter most for your stack.</div>
+      </a>
+      <a href="../SecureOS Landing.html#agents" class="pair-card">
+        <h4>Auditor <span style="color:var(--secondary);font-size:11px;letter-spacing:0.08em;margin-left:6px;">PRO</span></h4>
+        <div class="role">Supply chain monitor</div>
+        <div class="desc">Watches your dependencies 24/7. Sentinel scans your code; Auditor scans everyone else's.</div>
+      </a>
+      <a href="../SecureOS Landing.html#agents" class="pair-card">
+        <h4>Educator <span style="color:var(--success);font-size:11px;letter-spacing:0.08em;margin-left:6px;">FREE</span></h4>
+        <div class="role">Security coach</div>
+        <div class="desc">Turns every Sentinel finding into a plain-language lesson — why it's dangerous, who exploits it, how to avoid it next time.</div>
+      </a>
+    </div>
+  </div>
+</section>
+
+<section class="cta-section">
+  <div class="container">
+    <span class="section-label" style="justify-content:center;"><span style="background:var(--success);width:18px;height:1px;"></span> Free forever</span>
+    <h2>Install Sentinel in 3 minutes.</h2>
+    <p class="sub">No card. No trial. Open source. Works alongside Cursor, Claude Code, Lovable, and Bolt.</p>
+    <div class="cta-row">
+      <a href="../playground.html" class="btn btn-primary btn-lg">Try in playground</a>
+      <a href="../docs/quickstart.html" class="btn btn-ghost btn-lg">Install guide</a>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <a href="../SecureOS Landing.html" class="logo">
+      <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+      Secure<span class="red">OS</span>
+    </a>
+    <div class="footer-links">
+      <a href="../SecureOS Landing.html#agents">Agents</a>
+      <a href="../playground.html">Playground</a>
+      <a href="../docs/quickstart.html">Docs</a>
+      <a href="../changelog.html">Changelog</a>
+      <a href="../security.html">Security</a>
+    </div>
+    <div class="footer-copy">© 2026 SecureOS · secureos.dev</div>
+  </div>
+</footer>
+
+<script>
+const CATEGORIES = [
+  { id: 'secrets',   name: 'Secrets',           count: 6, desc: 'Hardcoded API keys, JWT secrets, DB connection strings, OAuth tokens.' },
+  { id: 'injection', name: 'Injection',         count: 5, desc: 'SQL injection, NoSQL injection, command injection, XSS, path traversal.' },
+  { id: 'auth',      name: 'Authentication',    count: 4, desc: 'Plaintext password compare, weak JWT, missing MFA, broken session handling.' },
+  { id: 'cors',      name: 'CORS & Headers',    count: 3, desc: 'Wildcard origins, missing CSP, exposed CORS, weak HSTS.' },
+  { id: 'deps',      name: 'Dependencies',      count: 4, desc: 'Outdated packages with CVEs, hallucinated packages, prototype pollution.' },
+  { id: 'config',    name: 'Configuration',     count: 5, desc: 'Debug mode in production, exposed env, missing rate limits, open ports.' },
+  { id: 'crypto',    name: 'Cryptography',      count: 3, desc: 'MD5/SHA-1 for passwords, hardcoded IVs, weak random for tokens.' },
+  { id: 'data',      name: 'Data exposure',     count: 3, desc: 'Stack traces in 500s, PII in logs, exposed admin routes, source maps in prod.' },
+  { id: 'logic',     name: 'Auth-z logic',      count: 2, desc: 'Missing ownership checks, IDOR, privilege escalation paths.' },
+];
+
+const EXAMPLES = {
+  secrets: {
+    title: 'auth.js · hardcoded Stripe key',
+    before: [
+      { cls: 'com', t: '// auth.js' },
+      { t: '' },
+      { t: 'const API_KEY = ', s: '"sk_live_4f2c9a1e8b3d7f6aZK2..."', c: 'del' },
+      { t: '' },
+      { t: 'stripe.charge({ amount, customer }, {' },
+      { t: '  apiKey: API_KEY' },
+      { t: '});' },
+    ],
+    after: [
+      { cls: 'com', t: '// auth.js (after Sentinel fix)' },
+      { t: '' },
+      { t: 'const API_KEY = ', s: 'process.env.STRIPE_SECRET_KEY;', c: 'add' },
+      { t: '' },
+      { t: 'stripe.charge({ amount, customer }, {' },
+      { t: '  apiKey: API_KEY' },
+      { t: '});' },
+    ],
+    foot: '<strong>SECOS-2191 · CRITICAL.</strong> A leaked Stripe key in a public repo gets picked up by scanners within minutes. Sentinel writes the env var pattern AND opens a PR to rotate the key in Stripe.',
+  },
+  injection: {
+    title: 'db.py · SQL injection',
+    before: [
+      { cls: 'com', t: '# db.py' },
+      { t: '' },
+      { t: 'def get_user(user_id):' },
+      { t: '    query = ', s: 'f"SELECT * FROM users WHERE id = \'{user_id}\'"', c: 'del' },
+      { t: '    return conn.execute(query).fetchone()' },
+    ],
+    after: [
+      { cls: 'com', t: '# db.py (after Sentinel fix)' },
+      { t: '' },
+      { t: 'def get_user(user_id):' },
+      { t: '    return conn.execute(', s: '"SELECT * FROM users WHERE id = %s", (user_id,)', c: 'add' },
+      { t: '    ).fetchone()' },
+    ],
+    foot: '<strong>SECOS-2194 · CRITICAL.</strong> An attacker sending <code style="font-family:var(--font-mono);">\' OR 1=1; --</code> as the user_id returns every row in the users table. Parameter binding fixes this completely.',
+  },
+  auth: {
+    title: 'login.ts · plaintext password compare',
+    before: [
+      { cls: 'com', t: '// login.ts' },
+      { t: '' },
+      { t: 'const user = await db.users.findOne({ email });' },
+      { t: 'if (', s: 'user.password === input.password', c: 'del', t2: ') {' },
+      { t: '  return jwt.sign({ id: user.id });' },
+      { t: '}' },
+    ],
+    after: [
+      { cls: 'com', t: '// login.ts (after Sentinel fix)' },
+      { t: '' },
+      { t: 'const user = await db.users.findOne({ email });' },
+      { t: 'if (', s: 'await bcrypt.compare(input.password, user.passwordHash)', c: 'add', t2: ') {' },
+      { t: '  return jwt.sign({ id: user.id });' },
+      { t: '}' },
+    ],
+    foot: '<strong>SECOS-2195 · HIGH.</strong> Plaintext password compare means a single DB leak exposes every password. bcrypt with a per-user salt is the bare minimum.',
+  },
+  cors: {
+    title: 'app.js · CORS wildcard',
+    before: [
+      { cls: 'com', t: '// app.js' },
+      { t: '' },
+      { t: 'app.use(cors({' },
+      { t: '  origin: ', s: '"*"', c: 'del', t2: ',' },
+      { t: '  credentials: true' },
+      { t: '}));' },
+    ],
+    after: [
+      { cls: 'com', t: '// app.js (after Sentinel fix)' },
+      { t: '' },
+      { t: 'app.use(cors({' },
+      { t: '  origin: ', s: '["https://yourapp.com"]', c: 'add', t2: ',' },
+      { t: '  credentials: true' },
+      { t: '}));' },
+    ],
+    foot: '<strong>SECOS-2193 · HIGH.</strong> CORS wildcard + credentials means any website can make authenticated calls on the user\'s behalf. Pin to your real domains.',
+  },
+  deps: {
+    title: 'package.json · hallucinated package',
+    before: [
+      { cls: 'com', t: '// package.json' },
+      { t: '' },
+      { t: '"dependencies": {' },
+      { t: '  ', s: '"react-validator-pro": "^1.0.0"', c: 'del', t2: ',' },
+      { t: '  "react": "^18.0.0"' },
+      { t: '}' },
+    ],
+    after: [
+      { cls: 'com', t: '// package.json (after Sentinel fix)' },
+      { t: '' },
+      { t: '"dependencies": {' },
+      { t: '  ', s: '"zod": "^3.22.0"', c: 'add', t2: ',' },
+      { t: '  "react": "^18.0.0"' },
+      { t: '}' },
+    ],
+    foot: '<strong>SECOS-2210 · CRITICAL.</strong> "react-validator-pro" doesn\'t exist on npm. Attackers register the names AI tools hallucinate and ship malware in them. Sentinel flags packages that don\'t exist or were published in the last 30 days.',
+  },
+  config: {
+    title: 'settings.py · debug in production',
+    before: [
+      { cls: 'com', t: '# settings.py' },
+      { t: '' },
+      { t: 'DEBUG = ', s: 'True', c: 'del' },
+      { t: 'ALLOWED_HOSTS = [', s: '"*"', c: 'del', t2: ']' },
+    ],
+    after: [
+      { cls: 'com', t: '# settings.py (after Sentinel fix)' },
+      { t: '' },
+      { t: 'DEBUG = ', s: 'os.getenv("DEBUG", "False") == "True"', c: 'add' },
+      { t: 'ALLOWED_HOSTS = [', s: '"yourapp.com"', c: 'add', t2: ']' },
+    ],
+    foot: '<strong>SECOS-2196 · MEDIUM.</strong> Debug mode in production gives attackers a remote console and dumps secrets in tracebacks. ALLOWED_HOSTS=* enables host header attacks.',
+  },
+  crypto: {
+    title: 'tokens.ts · MD5 for password',
+    before: [
+      { cls: 'com', t: '// tokens.ts' },
+      { t: '' },
+      { t: 'const hash = ', s: 'crypto.createHash("md5").update(password).digest("hex")', c: 'del', t2: ';' },
+    ],
+    after: [
+      { cls: 'com', t: '// tokens.ts (after Sentinel fix)' },
+      { t: '' },
+      { t: 'const hash = ', s: 'await bcrypt.hash(password, 12)', c: 'add', t2: ';' },
+    ],
+    foot: '<strong>SECOS-2230 · HIGH.</strong> MD5 is decades obsolete. Modern GPUs crack MD5-hashed 8-char passwords in seconds. Use bcrypt or argon2.',
+  },
+  data: {
+    title: 'middleware.ts · stack trace leak',
+    before: [
+      { cls: 'com', t: '// middleware.ts' },
+      { t: '' },
+      { t: 'app.use((err, req, res, next) => {' },
+      { t: '  res.status(500).json({ ', s: 'error: err.stack', c: 'del', t2: ' });' },
+      { t: '});' },
+    ],
+    after: [
+      { cls: 'com', t: '// middleware.ts (after Sentinel fix)' },
+      { t: '' },
+      { t: 'app.use((err, req, res, next) => {' },
+      { t: '  logger.error(err);' },
+      { t: '  res.status(500).json({ ', s: 'error: "Internal server error"', c: 'add', t2: ' });' },
+      { t: '});' },
+    ],
+    foot: '<strong>SECOS-2240 · MEDIUM.</strong> Stack traces leak filesystem paths, library versions, and sometimes secrets in interpolated error messages. Log internally, return a generic message.',
+  },
+  logic: {
+    title: 'orders.ts · IDOR',
+    before: [
+      { cls: 'com', t: '// orders.ts' },
+      { t: '' },
+      { t: 'app.get("/orders/:id", async (req, res) => {' },
+      { t: '  const order = await db.orders.findOne({ id: req.params.id });' },
+      { t: '  ', s: 'res.json(order);', c: 'del' },
+      { t: '});' },
+    ],
+    after: [
+      { cls: 'com', t: '// orders.ts (after Sentinel fix)' },
+      { t: '' },
+      { t: 'app.get("/orders/:id", async (req, res) => {' },
+      { t: '  const order = await db.orders.findOne({ id: req.params.id });' },
+      { t: '  ', s: 'if (order.userId !== req.user.id) return res.sendStatus(403);', c: 'add' },
+      { t: '  res.json(order);' },
+      { t: '});' },
+    ],
+    foot: '<strong>SECOS-2250 · HIGH.</strong> Insecure Direct Object Reference. Any logged-in user can read any order by changing the URL. Always check that the resource belongs to the requesting user.',
+  },
+};
+
+const RULES = [
+  ['SECOS-2191', 'Hardcoded API keys / secrets', 'Secrets', 'c'],
+  ['SECOS-2192', 'Hardcoded JWT signing secret', 'Secrets', 'c'],
+  ['SECOS-2193', 'CORS wildcard with credentials', 'CORS', 'h'],
+  ['SECOS-2194', 'SQL injection (string concat / f-string)', 'Injection', 'c'],
+  ['SECOS-2195', 'Plaintext password comparison', 'Authentication', 'h'],
+  ['SECOS-2196', 'Debug mode in production', 'Configuration', 'm'],
+  ['SECOS-2197', 'NoSQL injection via $where / unsanitized', 'Injection', 'c'],
+  ['SECOS-2198', 'Command injection via exec/spawn', 'Injection', 'c'],
+  ['SECOS-2199', 'Path traversal via unsanitized filename', 'Injection', 'h'],
+  ['SECOS-2200', 'XSS via dangerouslySetInnerHTML', 'Injection', 'c'],
+  ['SECOS-2201', 'Missing rate limit on auth endpoint', 'Configuration', 'h'],
+  ['SECOS-2202', 'OAuth state parameter missing', 'Authentication', 'h'],
+  ['SECOS-2203', 'Session cookie without Secure/HttpOnly', 'Authentication', 'h'],
+  ['SECOS-2204', 'Missing CSRF protection', 'Authentication', 'h'],
+  ['SECOS-2205', 'Outdated package with known CVE', 'Dependencies', 'h'],
+  ['SECOS-2210', 'Hallucinated / non-existent package', 'Dependencies', 'c'],
+  ['SECOS-2211', 'Package published in last 30 days', 'Dependencies', 'm'],
+  ['SECOS-2212', 'Prototype pollution via Object.assign', 'Dependencies', 'm'],
+  ['SECOS-2220', 'ALLOWED_HOSTS / Host wildcard', 'Configuration', 'h'],
+  ['SECOS-2221', '.env committed to git', 'Configuration', 'c'],
+  ['SECOS-2222', 'Listening on 0.0.0.0 in production', 'Configuration', 'm'],
+  ['SECOS-2230', 'MD5 / SHA-1 for password hashing', 'Cryptography', 'h'],
+  ['SECOS-2231', 'Hardcoded crypto IV / nonce', 'Cryptography', 'h'],
+  ['SECOS-2232', 'Math.random() for security tokens', 'Cryptography', 'h'],
+  ['SECOS-2240', 'Stack trace exposed on 500 errors', 'Data exposure', 'm'],
+  ['SECOS-2241', 'PII written to console / log', 'Data exposure', 'm'],
+  ['SECOS-2242', 'Source maps shipped to production', 'Data exposure', 'l'],
+  ['SECOS-2250', 'IDOR — missing ownership check', 'Auth-z', 'h'],
+  ['SECOS-2251', 'Privilege escalation via role param', 'Auth-z', 'c'],
+];
+
+// render categories
+const catsEl = document.getElementById('cats');
+catsEl.innerHTML = CATEGORIES.map((c, i) => `
+  <div class="cat ${i === 0 ? 'active' : ''}" data-id="${c.id}">
+    <div class="cat-h"><span class="cat-name">${c.name}</span><span class="cat-count">${c.count}</span></div>
+    <div class="cat-desc">${c.desc}</div>
+  </div>
+`).join('');
+
+function renderExample(id) {
+  const ex = EXAMPLES[id];
+  if (!ex) return;
+  document.getElementById('ex-title').textContent = ex.title;
+  const renderCol = (lines, mod) => lines.map(l => {
+    const cls = l.c ? 'code-line ' + l.c : 'code-line ' + (l.cls || '');
+    let body = '';
+    body += (l.t || '');
+    if (l.s) body += `<span class="${mod === 'del' ? '' : 'str'}">${l.s}</span>`;
+    if (l.t2) body += l.t2;
+    if (!body.trim()) body = '&nbsp;';
+    return `<div class="${cls}">${body}</div>`;
+  }).join('');
+  document.getElementById('ex-body').innerHTML = `
+    <div class="ex-col before">
+      <div class="ex-col-h"><span class="dot"></span>Before</div>
+      ${renderCol(ex.before, 'del')}
+    </div>
+    <div class="ex-col after">
+      <div class="ex-col-h"><span class="dot"></span>After Sentinel fix</div>
+      ${renderCol(ex.after, 'add')}
+    </div>
+  `;
+  document.getElementById('ex-foot').innerHTML = ex.foot;
+}
+
+catsEl.querySelectorAll('.cat').forEach(el => {
+  el.addEventListener('click', () => {
+    catsEl.querySelectorAll('.cat').forEach(x => x.classList.remove('active'));
+    el.classList.add('active');
+    renderExample(el.dataset.id);
+  });
+});
+renderExample('secrets');
+
+// render rules table
+document.getElementById('rules-tbody').innerHTML = RULES.map(([id, name, cat, sev]) => {
+  const sevName = { c: 'Critical', h: 'High', m: 'Medium', l: 'Low' }[sev];
+  return `<tr><td class="rule-id">${id}</td><td>${name}</td><td>${cat}</td><td><span class="rule-sev ${sev}">${sevName}</span></td></tr>`;
+}).join('');
+</script>
+</body>
+</html>

@@ -1,0 +1,757 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Scout — SecureOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --surface: #0f0f0f; --surface-2: #131313;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --accent: var(--secondary);
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --container: 1100px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  html { scroll-behavior: smooth; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 16px; line-height: 1.55; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  input, textarea { font-family: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  ::selection { background: rgba(68,136,255,0.35); }
+
+  .container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  .nav { height: 64px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; display: flex; align-items: center; justify-content: space-between; gap: 32px; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font-size: 14px; font-weight: 500; transition: all .15s ease; }
+  .btn-primary { background: var(--accent); color: #fff; }
+  .btn-primary:hover { background: #5a96ff; transform: translateY(-1px); }
+  .btn-primary:disabled { opacity: 0.4; cursor: not-allowed; transform: none; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.22); }
+  .btn-lg { height: 46px; padding: 0 22px; font-size: 15px; }
+  .btn-red { background: var(--primary); color: #fff; }
+  .btn-red:hover { background: #ff5959; }
+
+  /* hero */
+  .hero { padding: 80px 0 40px; position: relative; }
+  .hero-glow { position: absolute; top: 0; left: 0; right: 0; height: 400px; background: radial-gradient(40% 80% at 50% 0%, rgba(68,136,255,0.12), transparent 70%); pointer-events: none; }
+  .hero-inner { position: relative; }
+  .agent-mark { width: 56px; height: 56px; border-radius: 14px; background: linear-gradient(135deg, rgba(68,136,255,0.16), rgba(68,136,255,0.04)); border: 1px solid rgba(68,136,255,0.3); display: inline-grid; place-items: center; margin-bottom: 24px; color: var(--secondary); box-shadow: 0 0 60px rgba(68,136,255,0.18); }
+  .agent-meta { display: flex; gap: 10px; align-items: center; margin-bottom: 18px; }
+  .pill { font-size: 11px; font-weight: 600; letter-spacing: 0.08em; padding: 4px 9px; border-radius: 4px; display: inline-flex; align-items: center; gap: 6px; text-transform: uppercase; }
+  .pill-pro { background: rgba(68,136,255,0.10); color: var(--secondary); border: 1px solid rgba(68,136,255,0.28); }
+  .pill-pre { background: rgba(178,133,255,0.10); color: var(--purple); border: 1px solid rgba(178,133,255,0.28); }
+  h1.agent-h1 { font-size: clamp(44px, 6vw, 76px); font-weight: 600; letter-spacing: -0.035em; line-height: 1.02; max-width: 820px; }
+  .agent-role { font-size: 18px; color: var(--muted); margin-top: 12px; }
+  .agent-lede { font-size: 18px; color: var(--text-2); margin-top: 26px; max-width: 660px; line-height: 1.55; text-wrap: pretty; }
+
+  /* section */
+  .section { padding: 80px 0; }
+  .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 18px; }
+  .section-label::before { content: ""; width: 18px; height: 1px; background: var(--accent); }
+  .section h2 { font-size: clamp(32px, 4vw, 48px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.08; max-width: 760px; }
+  .section .sub { color: var(--muted); font-size: 17px; max-width: 600px; margin-top: 18px; }
+
+  /* wizard */
+  .wizard {
+    margin-top: 50px;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    border-radius: 16px;
+    overflow: hidden;
+    box-shadow: 0 30px 80px -20px rgba(0,0,0,0.6);
+  }
+  .wiz-steps {
+    display: flex;
+    padding: 0 24px;
+    border-bottom: 1px solid var(--border);
+    background: rgba(255,255,255,0.015);
+  }
+  .wiz-step {
+    padding: 16px 0;
+    margin-right: 32px;
+    font-size: 13px;
+    color: var(--muted);
+    display: flex; align-items: center; gap: 10px;
+    border-bottom: 2px solid transparent;
+    margin-bottom: -1px;
+  }
+  .wiz-step .num {
+    width: 22px; height: 22px; border-radius: 50%;
+    border: 1px solid var(--border-strong);
+    font-family: var(--font-mono); font-size: 11px;
+    display: inline-grid; place-items: center;
+  }
+  .wiz-step.active { color: var(--text); border-bottom-color: var(--accent); }
+  .wiz-step.active .num { background: var(--accent); border-color: var(--accent); color: #fff; }
+  .wiz-step.done { color: var(--success); }
+  .wiz-step.done .num { background: rgba(68,204,136,0.12); border-color: rgba(68,204,136,0.3); color: var(--success); }
+
+  .wiz-body { padding: 32px 36px; min-height: 360px; }
+  .wiz-h { font-size: 22px; font-weight: 600; letter-spacing: -0.02em; margin-bottom: 8px; }
+  .wiz-sub { color: var(--muted); font-size: 14px; margin-bottom: 28px; }
+
+  .stack-group { margin-bottom: 22px; }
+  .stack-group-h { font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 12px; font-weight: 500; }
+  .chips { display: flex; flex-wrap: wrap; gap: 8px; }
+  .chip {
+    padding: 7px 14px; font-size: 13px;
+    border-radius: 999px;
+    border: 1px solid var(--border-strong);
+    background: rgba(255,255,255,0.015);
+    color: var(--text-2);
+    transition: all .12s ease;
+    user-select: none;
+  }
+  .chip:hover { background: rgba(255,255,255,0.04); }
+  .chip.on {
+    background: rgba(68,136,255,0.12);
+    border-color: rgba(68,136,255,0.5);
+    color: var(--text);
+  }
+
+  textarea.field {
+    width: 100%; min-height: 110px; padding: 14px 16px;
+    background: var(--bg); border: 1px solid var(--border-strong);
+    border-radius: 10px;
+    color: var(--text);
+    font-size: 14px; line-height: 1.55;
+    resize: vertical;
+    outline: 0;
+    transition: border-color .15s ease;
+  }
+  textarea.field:focus { border-color: var(--accent); }
+
+  .radio-grid { display: grid; grid-template-columns: repeat(5, 1fr); gap: 8px; margin-top: 8px; }
+  .radio {
+    padding: 12px 14px; border-radius: 10px;
+    border: 1px solid var(--border-strong);
+    background: var(--bg);
+    cursor: pointer;
+    font-size: 13px; color: var(--text-2);
+    text-align: center;
+    transition: all .12s ease;
+  }
+  .radio:hover { background: rgba(255,255,255,0.02); }
+  .radio.on { border-color: var(--accent); background: rgba(68,136,255,0.06); color: var(--text); }
+
+  .wiz-foot {
+    display: flex; justify-content: space-between; align-items: center;
+    padding: 18px 36px;
+    border-top: 1px solid var(--border);
+    background: rgba(255,255,255,0.01);
+  }
+  .wiz-foot .summary { font-size: 12.5px; color: var(--muted); }
+  .wiz-foot .summary strong { color: var(--text); }
+
+  /* threat model output */
+  .output {
+    margin-top: 32px;
+    background: linear-gradient(180deg, #0a0a0a, #050505);
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    overflow: hidden;
+  }
+  .out-head {
+    padding: 18px 24px;
+    border-bottom: 1px solid var(--border);
+    display: flex; align-items: center; gap: 16px;
+    background: rgba(255,255,255,0.015);
+  }
+  .out-h-mark {
+    width: 32px; height: 32px; border-radius: 8px;
+    background: rgba(68,136,255,0.12); border: 1px solid rgba(68,136,255,0.3);
+    display: grid; place-items: center;
+    color: var(--secondary);
+  }
+  .out-h-title { font-size: 15px; font-weight: 600; }
+  .out-h-meta { font-size: 12px; color: var(--muted); font-family: var(--font-mono); margin-left: auto; }
+
+  .out-body { padding: 30px 30px 36px; }
+  .out-section { margin-bottom: 32px; }
+  .out-section:last-child { margin-bottom: 0; }
+  .out-section-h {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; font-weight: 500;
+    display: flex; align-items: center; gap: 10px;
+  }
+  .out-section-h::after { content: ""; flex: 1; height: 1px; background: var(--border); }
+
+  /* trust boundaries diagram */
+  .boundary {
+    display: grid;
+    grid-template-columns: repeat(4, 1fr);
+    gap: 14px;
+    position: relative;
+  }
+  .zone {
+    padding: 18px 18px 16px;
+    border: 1px solid var(--border-strong);
+    border-radius: 12px;
+    background: var(--surface);
+    position: relative;
+    opacity: 0;
+    transform: translateY(10px);
+    animation: zoneIn .4s ease forwards;
+  }
+  @keyframes zoneIn { to { opacity: 1; transform: none; } }
+  .zone-name {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .zone-thing { font-size: 14px; font-weight: 500; color: var(--text); margin-bottom: 4px; }
+  .zone-tags { display: flex; flex-wrap: wrap; gap: 4px; margin-top: 8px; }
+  .zone-tag {
+    font-size: 10.5px; padding: 2px 6px; border-radius: 4px;
+    background: rgba(255,255,255,0.03); border: 1px solid var(--border);
+    color: var(--muted); font-family: var(--font-mono);
+  }
+  .zone-arrow {
+    position: absolute; top: 50%; right: -14px;
+    width: 14px; transform: translateY(-50%);
+    color: var(--muted-2);
+    z-index: 1;
+  }
+
+  /* threats list */
+  .threat {
+    display: grid;
+    grid-template-columns: 64px 1fr auto;
+    gap: 16px;
+    padding: 16px 18px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.012);
+    margin-bottom: 8px;
+    opacity: 0; transform: translateY(8px);
+    animation: zoneIn .35s ease forwards;
+  }
+  .threat-stride {
+    font-family: var(--font-mono);
+    font-size: 11px;
+    color: var(--secondary);
+    background: rgba(68,136,255,0.08);
+    border: 1px solid rgba(68,136,255,0.3);
+    border-radius: 6px;
+    height: 24px;
+    display: inline-flex; align-items: center; justify-content: center;
+    padding: 0 8px;
+    letter-spacing: 0.06em;
+  }
+  .threat-main h4 { font-size: 14.5px; font-weight: 600; margin-bottom: 4px; }
+  .threat-main .desc { font-size: 13px; color: var(--muted); line-height: 1.55; }
+  .threat-main .miti { font-size: 12.5px; color: var(--success); margin-top: 8px; font-family: var(--font-mono); }
+  .threat-main .miti::before { content: "→ "; }
+  .threat-sev {
+    font-size: 10.5px; font-weight: 600; letter-spacing: 0.08em;
+    padding: 3px 7px; border-radius: 4px;
+    height: 22px;
+    display: inline-flex; align-items: center;
+  }
+  .threat-sev.c { color: var(--primary); background: rgba(255,68,68,0.08); border: 1px solid rgba(255,68,68,0.25); }
+  .threat-sev.h { color: var(--warning); background: rgba(255,170,0,0.08); border: 1px solid rgba(255,170,0,0.25); }
+  .threat-sev.m { color: var(--secondary); background: rgba(68,136,255,0.08); border: 1px solid rgba(68,136,255,0.25); }
+
+  /* summary chips */
+  .summary-grid { display: grid; grid-template-columns: repeat(4, 1fr); gap: 12px; margin-bottom: 24px; }
+  .summary-stat {
+    padding: 14px 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: rgba(255,255,255,0.012);
+  }
+  .summary-stat .lbl { font-size: 11px; letter-spacing: 0.08em; text-transform: uppercase; color: var(--muted); }
+  .summary-stat .val { font-size: 26px; font-weight: 600; letter-spacing: -0.02em; margin-top: 4px; }
+  .summary-stat.c .val { color: var(--primary); }
+  .summary-stat.h .val { color: var(--warning); }
+  .summary-stat.m .val { color: var(--secondary); }
+
+  .empty-output {
+    text-align: center; padding: 80px 30px; color: var(--muted);
+  }
+  .empty-output svg { opacity: 0.4; margin-bottom: 16px; }
+  .empty-output .h { color: var(--text-2); font-size: 14px; margin-bottom: 6px; font-weight: 500; }
+
+  /* footer */
+  .footer { border-top: 1px solid var(--border); padding: 56px 0 36px; }
+  .footer-inner { display: flex; justify-content: space-between; align-items: center; flex-wrap: wrap; gap: 20px; }
+  .footer-links { display: flex; gap: 22px; font-size: 14px; color: var(--muted); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 880px) {
+    .boundary { grid-template-columns: 1fr; }
+    .zone-arrow { display: none; }
+    .summary-grid { grid-template-columns: 1fr 1fr; }
+    .radio-grid { grid-template-columns: 1fr 1fr; }
+    .wiz-body { padding: 24px 20px; }
+    .wiz-foot { padding: 16px 20px; }
+    .threat { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+  }
+  @media (max-width: 560px) {
+    .crumb { display: none; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="container nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="../SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span class="sep">/</span>
+        <a href="../SecureOS Landing.html#agents">Agents</a>
+        <span class="sep">/</span>
+        <span class="here">Scout</span>
+      </span>
+    </div>
+    <div class="nav-links">
+      <a href="../SecureOS Landing.html#agents">Agents</a>
+      <a href="../playground.html">Playground</a>
+      <a href="../SecureOS Landing.html#pricing">Pricing</a>
+      <a href="../docs/quickstart.html">Docs</a>
+    </div>
+    <a href="../SecureOS Landing.html#pricing" class="btn btn-primary" style="height:34px;font-size:13px;">Start Pro trial</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <div class="agent-mark">
+      <svg width="28" height="28" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.5" stroke-linecap="round" stroke-linejoin="round">
+        <circle cx="11" cy="11" r="7"/>
+        <path d="M21 21l-4.35-4.35"/>
+        <path d="M11 7v8M7 11h8"/>
+      </svg>
+    </div>
+    <div class="agent-meta">
+      <span class="pill pill-pro">Pro</span>
+      <span class="pill pill-pre">Pre-build</span>
+    </div>
+    <h1 class="agent-h1">Scout</h1>
+    <div class="agent-role">Pre-build threat modeler</div>
+    <p class="agent-lede">
+      Before you write a line of code, Scout maps your attack surface from your stack and product description. STRIDE threats, trust boundaries, and a prioritized control list — in under 30 seconds.
+    </p>
+  </div>
+</header>
+
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <span class="section-label">Try it</span>
+    <h2>Threat model your next idea.</h2>
+    <p class="sub">No login, no signup. Pick your stack, sketch the product, get a model.</p>
+
+    <div class="wizard">
+      <div class="wiz-steps">
+        <div class="wiz-step active" data-step="1"><span class="num">1</span> Stack</div>
+        <div class="wiz-step" data-step="2"><span class="num">2</span> Product</div>
+        <div class="wiz-step" data-step="3"><span class="num">3</span> Model</div>
+      </div>
+
+      <div class="wiz-body">
+        <!-- STEP 1: STACK -->
+        <div class="wiz-pane" data-pane="1">
+          <div class="wiz-h">What are you building it with?</div>
+          <div class="wiz-sub">Pick everything that applies. Scout uses this to weight which threats matter most.</div>
+
+          <div class="stack-group">
+            <div class="stack-group-h">Frontend</div>
+            <div class="chips" data-group="frontend">
+              <div class="chip" data-id="react">React</div>
+              <div class="chip" data-id="nextjs">Next.js</div>
+              <div class="chip" data-id="vue">Vue</div>
+              <div class="chip" data-id="svelte">Svelte</div>
+              <div class="chip" data-id="html">Plain HTML / static</div>
+            </div>
+          </div>
+
+          <div class="stack-group">
+            <div class="stack-group-h">Backend</div>
+            <div class="chips" data-group="backend">
+              <div class="chip" data-id="express">Node / Express</div>
+              <div class="chip" data-id="fastapi">Python / FastAPI</div>
+              <div class="chip" data-id="django">Python / Django</div>
+              <div class="chip" data-id="rails">Rails</div>
+              <div class="chip" data-id="go">Go</div>
+              <div class="chip" data-id="serverless">Serverless functions</div>
+            </div>
+          </div>
+
+          <div class="stack-group">
+            <div class="stack-group-h">Database</div>
+            <div class="chips" data-group="db">
+              <div class="chip" data-id="postgres">Postgres</div>
+              <div class="chip" data-id="mysql">MySQL</div>
+              <div class="chip" data-id="mongo">MongoDB</div>
+              <div class="chip" data-id="supabase">Supabase</div>
+              <div class="chip" data-id="firebase">Firebase</div>
+            </div>
+          </div>
+
+          <div class="stack-group">
+            <div class="stack-group-h">Auth</div>
+            <div class="chips" data-group="auth">
+              <div class="chip" data-id="custom-jwt">Custom JWT</div>
+              <div class="chip" data-id="clerk">Clerk</div>
+              <div class="chip" data-id="auth0">Auth0</div>
+              <div class="chip" data-id="supabase-auth">Supabase Auth</div>
+              <div class="chip" data-id="oauth">OAuth (Google / GitHub)</div>
+            </div>
+          </div>
+
+          <div class="stack-group">
+            <div class="stack-group-h">Payments &amp; AI</div>
+            <div class="chips" data-group="other">
+              <div class="chip" data-id="stripe">Stripe</div>
+              <div class="chip" data-id="paddle">Paddle</div>
+              <div class="chip" data-id="openai">OpenAI API</div>
+              <div class="chip" data-id="anthropic">Anthropic API</div>
+              <div class="chip" data-id="uploads">User uploads</div>
+            </div>
+          </div>
+        </div>
+
+        <!-- STEP 2: PRODUCT -->
+        <div class="wiz-pane" data-pane="2" style="display:none;">
+          <div class="wiz-h">What is it for?</div>
+          <div class="wiz-sub">A sentence or two is enough. Scout maps your description to relevant attacker motivations.</div>
+
+          <textarea class="field" id="desc-field" placeholder="e.g. A SaaS that helps freelancers send invoices and collect payment. Users sign up, connect Stripe, send invoices to clients via email."></textarea>
+
+          <div class="stack-group-h" style="margin-top:24px;">Product type</div>
+          <div class="radio-grid" id="type-grid">
+            <div class="radio" data-id="consumer">Consumer</div>
+            <div class="radio" data-id="b2b">B2B SaaS</div>
+            <div class="radio" data-id="fintech">Fintech</div>
+            <div class="radio" data-id="ecom">E-commerce</div>
+            <div class="radio" data-id="internal">Internal tool</div>
+          </div>
+        </div>
+
+        <!-- STEP 3: MODEL -->
+        <div class="wiz-pane" data-pane="3" style="display:none;">
+          <div class="wiz-h">Generate your model</div>
+          <div class="wiz-sub" id="step3-summary">Scout will use your stack + description to produce a STRIDE-based threat model.</div>
+          <div style="margin-top:24px;">
+            <button class="btn btn-red btn-lg" id="generate-btn">
+              <svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2" stroke-linecap="round" stroke-linejoin="round"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg>
+              Map attack surface
+            </button>
+          </div>
+
+          <div id="output-mount"></div>
+        </div>
+      </div>
+
+      <div class="wiz-foot">
+        <div class="summary" id="wiz-summary">Step <strong>1</strong> of 3 · Pick a few stack items to continue</div>
+        <div style="display:flex;gap:8px;">
+          <button class="btn btn-ghost" id="back-btn" style="display:none;">Back</button>
+          <button class="btn btn-primary" id="next-btn" disabled>Next →</button>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-label">How Scout thinks</span>
+    <h2>STRIDE, but for products that don't exist yet.</h2>
+    <p class="sub">Most threat-modeling tools want a finished system diagram. Scout works from a stack list and a one-paragraph product description — the only things you have on day one.</p>
+
+    <div style="display:grid;grid-template-columns:repeat(3,1fr);gap:16px;margin-top:40px;">
+      <div style="padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">01 — Inputs</div>
+        <h4 style="font-size:16px;font-weight:600;margin-bottom:6px;">Stack + intent</h4>
+        <div style="font-size:13.5px;color:var(--muted);line-height:1.55;">No diagrams to draw. Just check boxes for the libraries you're using and describe what you're building.</div>
+      </div>
+      <div style="padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">02 — Mapping</div>
+        <h4 style="font-size:16px;font-weight:600;margin-bottom:6px;">Trust boundaries</h4>
+        <div style="font-size:13.5px;color:var(--muted);line-height:1.55;">Scout walks the data path from user to database, identifying every place authority changes hands.</div>
+      </div>
+      <div style="padding:24px;border:1px solid var(--border);border-radius:12px;background:var(--surface);">
+        <div style="font-size:11px;letter-spacing:0.1em;text-transform:uppercase;color:var(--accent);margin-bottom:10px;">03 — Output</div>
+        <h4 style="font-size:16px;font-weight:600;margin-bottom:6px;">Ranked controls</h4>
+        <div style="font-size:13.5px;color:var(--muted);line-height:1.55;">A prioritized list of mitigations Sentinel will then enforce on every commit.</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="container footer-inner">
+    <a href="../SecureOS Landing.html" class="logo">
+      <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+      Secure<span class="red">OS</span>
+    </a>
+    <div class="footer-links">
+      <a href="../SecureOS Landing.html#agents">Agents</a>
+      <a href="../playground.html">Playground</a>
+      <a href="../docs/quickstart.html">Docs</a>
+      <a href="../changelog.html">Changelog</a>
+      <a href="../security.html">Security</a>
+    </div>
+    <div class="footer-copy">© 2026 SecureOS · secureos.dev</div>
+  </div>
+</footer>
+
+<script>
+// ============ state ============
+const state = {
+  step: 1,
+  stack: new Set(),
+  desc: '',
+  type: '',
+};
+
+// ============ threats database ============
+// each threat is keyed by what stack/type triggers it
+const THREATS = [
+  { stride: 'I', sev: 'c', triggers: ['supabase', 'firebase'], req: ['react','nextjs','vue','svelte'], title: 'Service-role key shipped in client bundle', desc: 'Supabase/Firebase admin keys imported into any React/Vue component end up in the JS payload sent to every visitor.', miti: 'Use anon key on client; service role only on server.' },
+  { stride: 'T', sev: 'c', triggers: ['postgres','mysql','supabase'], title: 'SQL injection via template-literal queries', desc: 'AI coders default to string interpolation for queries. User-controlled input flows directly into the SQL.', miti: 'Always use parameter binding ($1, %s, or ORM bind params).' },
+  { stride: 'T', sev: 'c', triggers: ['mongo'], title: 'NoSQL injection via $where / unsanitized operator', desc: 'Mongo accepts operator objects like {$gt: ""} where it expects a string, bypassing auth comparisons.', miti: 'Strip $-keys from req.body before passing to the query.' },
+  { stride: 'S', sev: 'c', triggers: ['custom-jwt'], title: 'JWT signed with hardcoded secret', desc: 'Custom JWT setups almost always end up with the signing secret in source or env-leaked. Once leaked, anyone can mint admin tokens.', miti: 'Use a managed auth provider or rotate the secret and verify the alg header server-side.' },
+  { stride: 'S', sev: 'h', triggers: ['custom-jwt'], title: 'JWT alg=none accepted', desc: 'Many JWT libraries accept tokens with alg=none if you do not enforce. Attacker strips signature, server trusts payload.', miti: 'Hardcode allowed algorithms in verify() options.' },
+  { stride: 'E', sev: 'c', triggers: ['stripe'], req: [], title: 'Stripe webhook signature not verified', desc: 'Webhook routes that mutate user state (granting subscriptions) without verifying the Stripe-Signature header can be triggered by anyone with the URL.', miti: 'Call stripe.webhooks.constructEvent with the endpoint secret on every webhook.' },
+  { stride: 'T', sev: 'h', triggers: ['stripe'], title: 'Pricing tampering via client-side amount', desc: 'If the frontend sends the price to Stripe Checkout, an attacker can intercept and pay $0.01 for the premium plan.', miti: 'Look up the amount server-side from a fixed product catalog before creating the session.' },
+  { stride: 'I', sev: 'h', triggers: ['uploads'], title: 'Path traversal via filename', desc: 'User-supplied filenames like ../../etc/passwd let attackers write or read outside the upload directory.', miti: 'Use library secureFilename() and store under a generated UUID.' },
+  { stride: 'D', sev: 'm', triggers: ['uploads'], title: 'No size limit on uploads', desc: 'A 100GB upload exhausts disk and bandwidth, taking the service down for everyone.', miti: 'Set max file size at edge (Cloudflare/nginx) and in your framework.' },
+  { stride: 'I', sev: 'c', triggers: ['openai','anthropic'], title: 'Prompt injection exfiltrates user data', desc: 'LLM apps that include other users\' content in the system prompt can be jailbroken to leak that content via injected instructions.', miti: 'Scope each session to a single user; never mix prompts across tenants.' },
+  { stride: 'D', sev: 'h', triggers: ['openai','anthropic'], title: 'LLM endpoint becomes a $$$ DoS', desc: 'Unauthenticated LLM endpoints get scraped by token farmers within hours, racking up thousands in API bills.', miti: 'Require auth + per-user rate limit + spending cap.' },
+  { stride: 'I', sev: 'h', triggers: ['react','vue','nextjs','svelte'], title: 'XSS via dangerouslySetInnerHTML / v-html', desc: 'User-controlled HTML rendered without sanitization lets one user inject script that runs in every other user\'s session.', miti: 'Render as text, or sanitize with DOMPurify.' },
+  { stride: 'S', sev: 'h', triggers: ['express','fastapi','django','rails','go'], title: 'CSRF on state-changing endpoints', desc: 'POST endpoints without CSRF tokens can be invoked from a malicious site via the user\'s cookies.', miti: 'Double-submit cookie pattern or SameSite=Strict + CSRF token.' },
+  { stride: 'I', sev: 'h', triggers: ['express','fastapi','django','rails','serverless'], title: 'Missing rate limits on auth & email endpoints', desc: 'Login, password reset, and invite endpoints without rate limits enable credential stuffing and email enumeration.', miti: 'Per-IP and per-account rate limits with exponential backoff.' },
+  { stride: 'E', sev: 'h', triggers: ['express','fastapi','django','rails','go','serverless'], title: 'IDOR — missing ownership checks', desc: 'Endpoints like GET /orders/:id return any order if you know the ID, regardless of the requesting user.', miti: 'Filter by ownerId at the query layer or use row-level security.' },
+  { stride: 'R', sev: 'm', triggers: ['fintech','ecom'], byType: true, title: 'No immutable audit log of financial actions', desc: 'When a user disputes a charge or a transfer, you need a tamper-evident record. App logs alone are insufficient.', miti: 'Write critical events to an append-only table with a hash chain.' },
+  { stride: 'D', sev: 'm', triggers: ['serverless'], title: 'Recursive serverless trigger bills runaway', desc: 'A Lambda/Function writing to the storage that triggers it loops infinitely until the AWS bill arrives.', miti: 'Idempotent triggers + concurrency limits + cost alerts.' },
+  { stride: 'I', sev: 'h', triggers: ['firebase'], title: 'Open Firebase rules', desc: 'Default Firebase rules allow read/write to anyone for 30 days. Easy to forget.', miti: 'Set rules to require request.auth from day one.' },
+];
+
+const ALL_TYPES = ['consumer','b2b','fintech','ecom','internal'];
+
+// ============ rendering ============
+function $(s) { return document.querySelector(s); }
+function $$(s) { return [...document.querySelectorAll(s)]; }
+
+// step 1 chips
+$$('.chips .chip').forEach(c => {
+  c.addEventListener('click', () => {
+    const id = c.dataset.id;
+    if (state.stack.has(id)) { state.stack.delete(id); c.classList.remove('on'); }
+    else { state.stack.add(id); c.classList.add('on'); }
+    updateNav();
+  });
+});
+
+// step 2
+$('#desc-field').addEventListener('input', (e) => { state.desc = e.target.value; updateNav(); });
+$$('.radio').forEach(r => {
+  r.addEventListener('click', () => {
+    $$('.radio').forEach(x => x.classList.remove('on'));
+    r.classList.add('on');
+    state.type = r.dataset.id;
+    updateNav();
+  });
+});
+
+// navigation
+$('#next-btn').addEventListener('click', () => goto(state.step + 1));
+$('#back-btn').addEventListener('click', () => goto(state.step - 1));
+
+function goto(n) {
+  state.step = n;
+  $$('.wiz-pane').forEach(p => p.style.display = parseInt(p.dataset.pane, 10) === n ? '' : 'none');
+  $$('.wiz-step').forEach(s => {
+    const stepN = parseInt(s.dataset.step, 10);
+    s.classList.toggle('active', stepN === n);
+    s.classList.toggle('done', stepN < n);
+  });
+  $('#back-btn').style.display = n > 1 ? '' : 'none';
+  updateNav();
+  if (n === 3) renderStep3Summary();
+}
+
+function updateNav() {
+  const next = $('#next-btn');
+  if (state.step === 1) {
+    next.style.display = '';
+    next.disabled = state.stack.size < 2;
+    $('#wiz-summary').innerHTML = `Step <strong>1</strong> of 3 · ${state.stack.size === 0 ? 'Pick at least two stack items' : state.stack.size + ' items selected'}`;
+  } else if (state.step === 2) {
+    next.style.display = '';
+    next.disabled = !state.desc.trim() || !state.type;
+    $('#wiz-summary').innerHTML = `Step <strong>2</strong> of 3 · ${state.type ? 'Ready' : 'Pick a product type'}`;
+  } else {
+    next.style.display = 'none';
+    $('#wiz-summary').innerHTML = `Step <strong>3</strong> of 3 · Click <strong>Map attack surface</strong> to generate`;
+  }
+}
+
+function renderStep3Summary() {
+  const parts = [...state.stack].slice(0, 6).join(' · ') + (state.stack.size > 6 ? ` + ${state.stack.size - 6} more` : '');
+  $('#step3-summary').innerHTML = `Scout will model: <strong style="color:var(--text);">${state.type || '—'}</strong> · <span style="font-family:var(--font-mono);font-size:12px;">${parts}</span>`;
+}
+
+// ============ generate ============
+$('#generate-btn').addEventListener('click', generate);
+
+function computeThreats() {
+  const stack = state.stack;
+  const type = state.type;
+  const selected = [];
+  for (const t of THREATS) {
+    const triggered = t.triggers.some(tr => stack.has(tr) || (t.byType && tr === type));
+    const req = !t.req || t.req.length === 0 || t.req.some(r => stack.has(r));
+    if (triggered && req) selected.push(t);
+  }
+  // dedupe by title
+  const seen = new Set();
+  return selected.filter(t => { if (seen.has(t.title)) return false; seen.add(t.title); return true; });
+}
+
+function computeZones() {
+  const zones = [];
+  zones.push({ name: 'User', thing: ['react','vue','svelte','nextjs'].some(x => state.stack.has(x)) ? 'Browser (SPA)' : 'Browser', tags: [...state.stack].filter(x => ['react','vue','nextjs','svelte','html'].includes(x)) });
+  zones.push({ name: 'Edge', thing: state.stack.has('nextjs') || state.stack.has('serverless') ? 'Edge / Functions' : 'Reverse proxy', tags: state.stack.has('nextjs') ? ['Next.js'] : (state.stack.has('serverless') ? ['Lambda'] : ['nginx']) });
+
+  const backend = [...state.stack].find(x => ['express','fastapi','django','rails','go','serverless'].includes(x));
+  zones.push({ name: 'App', thing: backend ? backend.charAt(0).toUpperCase() + backend.slice(1) : 'API server', tags: [
+    [...state.stack].find(x => ['custom-jwt','clerk','auth0','supabase-auth','oauth'].includes(x)) || null,
+    state.stack.has('stripe') ? 'Stripe' : (state.stack.has('paddle') ? 'Paddle' : null),
+    state.stack.has('openai') ? 'OpenAI' : (state.stack.has('anthropic') ? 'Anthropic' : null),
+  ].filter(Boolean) });
+
+  const db = [...state.stack].find(x => ['postgres','mysql','mongo','supabase','firebase'].includes(x));
+  zones.push({ name: 'Storage', thing: db ? (db === 'mongo' ? 'MongoDB' : db.charAt(0).toUpperCase() + db.slice(1)) : 'Database', tags: state.stack.has('uploads') ? ['Object storage'] : [] });
+
+  return zones;
+}
+
+async function generate() {
+  $('#generate-btn').disabled = true;
+  $('#generate-btn').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><circle cx="12" cy="12" r="9" opacity="0.3"/><path d="M12 3a9 9 0 019 9"/></svg> Mapping…';
+  await sleep(400);
+
+  const threats = computeThreats();
+  const zones = computeZones();
+  const sevCount = { c: 0, h: 0, m: 0 };
+  threats.forEach(t => sevCount[t.sev]++);
+
+  const mount = $('#output-mount');
+  mount.innerHTML = `
+    <div class="output">
+      <div class="out-head">
+        <span class="out-h-mark"><svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg></span>
+        <div>
+          <div class="out-h-title">Threat model for ${escapeHtml(state.type || 'your product')}</div>
+          <div style="font-size:12px;color:var(--muted);">Generated by Scout · ${threats.length} threats across ${zones.length} trust zones</div>
+        </div>
+        <div class="out-h-meta">v1 · ${new Date().toLocaleDateString('en-US', { month: 'short', day: 'numeric', year: 'numeric' })}</div>
+      </div>
+      <div class="out-body">
+        <div class="summary-grid">
+          <div class="summary-stat"><div class="lbl">Threats</div><div class="val">${threats.length}</div></div>
+          <div class="summary-stat c"><div class="lbl">Critical</div><div class="val">${sevCount.c}</div></div>
+          <div class="summary-stat h"><div class="lbl">High</div><div class="val">${sevCount.h}</div></div>
+          <div class="summary-stat m"><div class="lbl">Medium</div><div class="val">${sevCount.m}</div></div>
+        </div>
+
+        <div class="out-section">
+          <div class="out-section-h">Trust boundaries</div>
+          <div class="boundary" id="boundary"></div>
+        </div>
+
+        <div class="out-section">
+          <div class="out-section-h">Threats (STRIDE)</div>
+          <div id="threats-list"></div>
+        </div>
+
+        <div style="border-top:1px solid var(--border);padding-top:20px;margin-top:24px;display:flex;justify-content:space-between;align-items:center;gap:16px;flex-wrap:wrap;">
+          <div style="font-size:13.5px;color:var(--muted);max-width:520px;">
+            Scout writes this model to <code style="font-family:var(--font-mono);font-size:12px;color:var(--text);background:rgba(255,255,255,0.04);padding:2px 6px;border-radius:4px;">/.secureos/threat-model.md</code> on your first commit. Sentinel uses it to weight every scan.
+          </div>
+          <a href="../playground.html" class="btn btn-primary">Continue to playground →</a>
+        </div>
+      </div>
+    </div>
+  `;
+
+  // render zones with stagger
+  const bound = $('#boundary');
+  zones.forEach((z, i) => {
+    const showArrow = i < zones.length - 1;
+    const div = document.createElement('div');
+    div.className = 'zone';
+    div.style.animationDelay = (i * 100) + 'ms';
+    div.innerHTML = `
+      <div class="zone-name">${z.name}</div>
+      <div class="zone-thing">${escapeHtml(z.thing)}</div>
+      <div class="zone-tags">${z.tags.map(t => `<span class="zone-tag">${escapeHtml(t)}</span>`).join('')}</div>
+      ${showArrow ? '<svg class="zone-arrow" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>' : ''}
+    `;
+    bound.appendChild(div);
+  });
+
+  // render threats with stagger
+  const list = $('#threats-list');
+  threats.sort((a, b) => ({ c: 0, h: 1, m: 2 })[a.sev] - ({ c: 0, h: 1, m: 2 })[b.sev]);
+  threats.forEach((t, i) => {
+    const div = document.createElement('div');
+    div.className = 'threat';
+    div.style.animationDelay = (400 + i * 80) + 'ms';
+    div.innerHTML = `
+      <div><span class="threat-stride">${t.stride}</span></div>
+      <div class="threat-main">
+        <h4>${escapeHtml(t.title)}</h4>
+        <div class="desc">${escapeHtml(t.desc)}</div>
+        <div class="miti">${escapeHtml(t.miti)}</div>
+      </div>
+      <div><span class="threat-sev ${t.sev}">${({c:'CRITICAL', h:'HIGH', m:'MEDIUM'})[t.sev]}</span></div>
+    `;
+    list.appendChild(div);
+  });
+
+  setTimeout(() => {
+    $('#generate-btn').disabled = false;
+    $('#generate-btn').innerHTML = '<svg width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2.2"><polygon points="13 2 3 14 12 14 11 22 21 10 12 10 13 2"/></svg> Re-generate';
+  }, 400 + threats.length * 80);
+
+  mount.scrollIntoView({ behavior: 'smooth', block: 'start' });
+}
+
+function escapeHtml(s) { return String(s || '').replace(/[&<>"']/g, c => ({'&':'&amp;','<':'&lt;','>':'&gt;','"':'&quot;',"'":'&#39;'}[c])); }
+function sleep(ms) { return new Promise(r => setTimeout(r, ms)); }
+
+updateNav();
+</script>
+</body>
+</html>

@@ -1,0 +1,639 @@
+<!doctype html>
+<html lang="en">
+<head>
+<meta charset="utf-8" />
+<meta name="viewport" content="width=device-width, initial-scale=1" />
+<title>Security — SecureOS</title>
+<link rel="preconnect" href="https://fonts.googleapis.com">
+<link rel="preconnect" href="https://fonts.gstatic.com" crossorigin>
+<link href="https://fonts.googleapis.com/css2?family=Inter:wght@400;500;600;700&family=JetBrains+Mono:wght@400;500;600&display=swap" rel="stylesheet">
+<style>
+  :root {
+    --bg: #080808; --surface: #0f0f0f; --surface-2: #131313;
+    --border: rgba(255,255,255,0.06); --border-strong: rgba(255,255,255,0.10);
+    --primary: #ff4444; --secondary: #4488ff; --success: #44cc88;
+    --warning: #ffaa00; --purple: #b285ff;
+    --text: #f0f0f0; --text-2: #c8c8c8; --muted: #888; --muted-2: #6a6a6a;
+    --font-sans: 'Inter', system-ui, sans-serif;
+    --font-mono: 'JetBrains Mono', ui-monospace, monospace;
+    --container: 1080px;
+  }
+  *, *::before, *::after { box-sizing: border-box; }
+  html, body { margin: 0; padding: 0; }
+  body { background: var(--bg); color: var(--text); font-family: var(--font-sans); font-size: 16px; line-height: 1.6; -webkit-font-smoothing: antialiased; }
+  a { color: inherit; text-decoration: none; }
+  button { font-family: inherit; cursor: pointer; border: 0; background: none; color: inherit; }
+  h1, h2, h3, h4, p { margin: 0; }
+  code { font-family: var(--font-mono); font-size: 0.88em; background: rgba(255,255,255,0.05); padding: 1px 6px; border-radius: 4px; color: var(--text); }
+  ::selection { background: rgba(68,204,136,0.35); }
+
+  .container { max-width: var(--container); margin: 0 auto; padding: 0 24px; }
+
+  /* nav */
+  .nav { height: 64px; border-bottom: 1px solid var(--border); background: rgba(8,8,8,0.7); backdrop-filter: blur(14px); position: sticky; top: 0; z-index: 50; }
+  .nav-inner { height: 100%; max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; align-items: center; justify-content: space-between; }
+  .logo { display: inline-flex; align-items: center; gap: 8px; font-weight: 600; font-size: 17px; letter-spacing: -0.02em; }
+  .logo-mark { width: 22px; height: 22px; display: inline-grid; place-items: center; border: 1px solid var(--border-strong); border-radius: 6px; background: linear-gradient(180deg, rgba(255,68,68,0.18), rgba(255,68,68,0.05)); }
+  .logo .red { color: var(--primary); }
+  .crumb { color: var(--muted); font-size: 14px; display: inline-flex; align-items: center; gap: 10px; margin-left: 8px; }
+  .crumb .sep { color: var(--muted-2); }
+  .crumb .here { color: var(--text); }
+  .nav-links { display: flex; gap: 24px; font-size: 14px; color: var(--muted); }
+  .nav-links a:hover { color: var(--text); }
+
+  .btn { display: inline-flex; align-items: center; justify-content: center; gap: 8px; height: 38px; padding: 0 16px; border-radius: 8px; font-size: 14px; font-weight: 500; }
+  .btn-primary { background: var(--primary); color: #fff; }
+  .btn-primary:hover { background: #ff5959; }
+  .btn-ghost { background: transparent; color: var(--text); border: 1px solid var(--border-strong); }
+  .btn-ghost:hover { border-color: rgba(255,255,255,0.22); }
+
+  /* hero */
+  .hero { padding: 90px 0 50px; position: relative; }
+  .hero-glow { position: absolute; top: 0; left: 0; right: 0; height: 400px; background: radial-gradient(40% 80% at 50% 0%, rgba(68,204,136,0.08), transparent 70%); pointer-events: none; }
+  .hero-inner { position: relative; }
+  .hero-eyebrow { font-size: 13px; color: var(--success); letter-spacing: 0.04em; margin-bottom: 14px; display: inline-flex; align-items: center; gap: 8px; }
+  .hero-eyebrow svg { opacity: 0.8; }
+  .hero h1 { font-size: clamp(40px, 5vw, 64px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.05; max-width: 760px; }
+  .hero p.lede { color: var(--text-2); font-size: 19px; margin-top: 22px; max-width: 660px; line-height: 1.55; text-wrap: pretty; }
+  .hero-actions { margin-top: 36px; display: flex; gap: 12px; flex-wrap: wrap; }
+
+  /* trust badges */
+  .badges { padding: 36px 0; border-top: 1px solid var(--border); border-bottom: 1px solid var(--border); margin-top: 60px; }
+  .badges-grid {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 22px;
+    align-items: center;
+  }
+  .trust-badge {
+    text-align: center;
+    color: var(--muted);
+    font-size: 12.5px;
+    font-weight: 500;
+    letter-spacing: 0.04em;
+    display: flex; flex-direction: column; align-items: center; gap: 8px;
+  }
+  .trust-badge .seal {
+    width: 52px; height: 52px;
+    border-radius: 50%;
+    background: var(--surface);
+    border: 1px solid var(--border-strong);
+    display: grid; place-items: center;
+    color: var(--text-2);
+  }
+  .trust-badge .seal svg { width: 22px; height: 22px; }
+  .trust-badge .seal.success { border-color: rgba(68,204,136,0.25); color: var(--success); background: rgba(68,204,136,0.04); }
+
+  /* sections */
+  .section { padding: 90px 0; }
+  .section-label { display: inline-flex; align-items: center; gap: 8px; font-size: 12px; font-weight: 500; letter-spacing: 0.12em; text-transform: uppercase; color: var(--muted); margin-bottom: 16px; }
+  .section-label::before { content: ""; width: 18px; height: 1px; background: var(--success); }
+  .section h2 { font-size: clamp(30px, 4vw, 44px); font-weight: 600; letter-spacing: -0.025em; line-height: 1.1; max-width: 720px; }
+  .section .sub { color: var(--muted); font-size: 17px; max-width: 600px; margin-top: 18px; }
+
+  /* posture cards */
+  .posture-grid { display: grid; grid-template-columns: repeat(2, 1fr); gap: 16px; margin-top: 48px; }
+  .post-card {
+    padding: 28px;
+    border: 1px solid var(--border);
+    border-radius: 14px;
+    background: var(--surface);
+    transition: all .15s ease;
+  }
+  .post-card:hover { border-color: var(--border-strong); }
+  .post-card-h {
+    display: flex; align-items: center; gap: 12px;
+    margin-bottom: 14px;
+  }
+  .post-icon {
+    width: 36px; height: 36px;
+    border-radius: 10px;
+    display: grid; place-items: center;
+    background: rgba(68,204,136,0.08);
+    border: 1px solid rgba(68,204,136,0.18);
+    color: var(--success);
+  }
+  .post-card h3 { font-size: 17px; font-weight: 600; letter-spacing: -0.01em; }
+  .post-card p { color: var(--text-2); font-size: 14px; line-height: 1.6; margin-bottom: 14px; }
+  .post-card ul { padding-left: 0; margin: 0; list-style: none; font-size: 13.5px; color: var(--text-2); }
+  .post-card ul li { padding: 5px 0; display: flex; gap: 10px; align-items: baseline; }
+  .post-card ul li::before {
+    content: "";
+    width: 4px; height: 4px; border-radius: 50%;
+    background: var(--success);
+    flex-shrink: 0;
+    margin-top: 8px;
+  }
+  .post-card .meta {
+    font-family: var(--font-mono); font-size: 11.5px;
+    color: var(--muted); margin-top: 14px;
+    padding-top: 14px;
+    border-top: 1px solid var(--border);
+  }
+
+  /* what we don't do */
+  .deny-list {
+    margin-top: 40px;
+    background: linear-gradient(180deg, rgba(255,68,68,0.025), rgba(0,0,0,0));
+    border: 1px solid rgba(255,68,68,0.15);
+    border-radius: 14px;
+    padding: 32px 36px;
+  }
+  .deny-list h3 {
+    font-size: 18px; font-weight: 600;
+    margin-bottom: 6px;
+    color: var(--text);
+    display: flex; align-items: center; gap: 10px;
+  }
+  .deny-list h3 svg { color: var(--primary); }
+  .deny-list > p { color: var(--text-2); font-size: 14px; margin-bottom: 24px; }
+  .deny-grid { display: grid; grid-template-columns: 1fr 1fr; gap: 8px 28px; }
+  .deny-item {
+    padding: 12px 0;
+    border-top: 1px solid var(--border);
+    display: flex; align-items: flex-start; gap: 14px;
+    font-size: 14px;
+  }
+  .deny-item .x {
+    width: 18px; height: 18px;
+    flex-shrink: 0;
+    border-radius: 50%;
+    border: 1px solid rgba(255,68,68,0.3);
+    background: rgba(255,68,68,0.06);
+    color: var(--primary);
+    display: grid; place-items: center;
+    margin-top: 1px;
+  }
+  .deny-item-body strong { color: var(--text); font-weight: 600; }
+  .deny-item-body { color: var(--text-2); line-height: 1.55; }
+
+  /* infrastructure section */
+  .infra-flow {
+    margin-top: 48px;
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    background: linear-gradient(180deg, #0a0a0a, #060606);
+    padding: 36px 32px;
+  }
+  .infra-h { display: flex; align-items: center; gap: 14px; margin-bottom: 28px; }
+  .infra-h h3 { font-size: 17px; font-weight: 600; }
+  .infra-h .pill { font-family: var(--font-mono); font-size: 11px; padding: 3px 8px; border-radius: 4px; background: rgba(68,204,136,0.08); color: var(--success); border: 1px solid rgba(68,204,136,0.28); }
+
+  .flow {
+    display: grid; grid-template-columns: repeat(5, 1fr); gap: 12px;
+    position: relative;
+  }
+  .flow-node {
+    padding: 16px;
+    border: 1px solid var(--border);
+    border-radius: 10px;
+    background: var(--surface);
+    position: relative;
+  }
+  .flow-node-h {
+    font-size: 11px; letter-spacing: 0.1em; text-transform: uppercase;
+    color: var(--muted); margin-bottom: 8px;
+  }
+  .flow-node-thing { font-size: 14px; font-weight: 500; margin-bottom: 4px; }
+  .flow-node-meta { font-size: 11.5px; color: var(--muted); font-family: var(--font-mono); }
+  .flow-arr {
+    position: absolute; top: 50%; right: -12px;
+    transform: translateY(-50%);
+    color: var(--muted-2);
+    z-index: 1;
+  }
+  .flow-node.lock {
+    border-color: rgba(68,204,136,0.22);
+    background: rgba(68,204,136,0.025);
+  }
+  .flow-node.lock .flow-node-h { color: var(--success); }
+  .flow-legend {
+    margin-top: 22px;
+    font-size: 12.5px; color: var(--muted);
+    display: flex; flex-wrap: wrap; gap: 16px;
+  }
+  .flow-legend span { display: inline-flex; align-items: center; gap: 6px; }
+  .flow-legend .sw { width: 10px; height: 10px; border-radius: 3px; }
+
+  /* disclosure */
+  .disclosure {
+    margin-top: 40px;
+    padding: 32px 36px;
+    border: 1px solid var(--border-strong);
+    border-radius: 14px;
+    background: var(--surface);
+    display: grid;
+    grid-template-columns: 1fr auto;
+    gap: 28px;
+    align-items: center;
+  }
+  .disclosure h3 { font-size: 20px; font-weight: 600; letter-spacing: -0.015em; margin-bottom: 8px; }
+  .disclosure p { color: var(--text-2); font-size: 14.5px; line-height: 1.6; max-width: 540px; }
+  .disclosure .email {
+    font-family: var(--font-mono);
+    font-size: 13px;
+    background: var(--bg);
+    padding: 10px 14px;
+    border-radius: 8px;
+    border: 1px solid var(--border-strong);
+    color: var(--success);
+    display: inline-block;
+    margin-top: 12px;
+  }
+
+  /* FAQ */
+  .faq { margin-top: 32px; }
+  .faq-q {
+    border-top: 1px solid var(--border);
+    padding: 22px 0;
+  }
+  .faq-q summary {
+    cursor: pointer;
+    font-size: 16px;
+    font-weight: 500;
+    list-style: none;
+    display: flex; align-items: center; justify-content: space-between;
+    color: var(--text);
+  }
+  .faq-q summary::-webkit-details-marker { display: none; }
+  .faq-q summary::after {
+    content: "+"; font-family: var(--font-mono); font-size: 18px; color: var(--muted);
+    transition: transform .2s ease;
+  }
+  .faq-q[open] summary::after { content: "−"; }
+  .faq-q p {
+    margin-top: 14px;
+    color: var(--text-2);
+    font-size: 14.5px;
+    line-height: 1.65;
+    max-width: 720px;
+  }
+
+  /* footer */
+  .footer { border-top: 1px solid var(--border); padding: 56px 0 36px; }
+  .footer-inner { max-width: 1280px; margin: 0 auto; padding: 0 24px; display: flex; justify-content: space-between; align-items: center; gap: 20px; flex-wrap: wrap; }
+  .footer-links { display: flex; gap: 22px; font-size: 14px; color: var(--muted); }
+  .footer-links a:hover { color: var(--text); }
+  .footer-copy { font-size: 13px; color: var(--muted-2); }
+
+  @media (max-width: 880px) {
+    .posture-grid, .deny-grid { grid-template-columns: 1fr; }
+    .badges-grid { grid-template-columns: repeat(3, 1fr); }
+    .flow { grid-template-columns: 1fr; }
+    .flow-arr { display: none; }
+    .disclosure { grid-template-columns: 1fr; }
+    .nav-links { display: none; }
+    .crumb { display: none; }
+    .section { padding: 64px 0; }
+  }
+</style>
+</head>
+<body>
+
+<nav class="nav">
+  <div class="nav-inner">
+    <div style="display:flex;align-items:center;gap:16px;">
+      <a href="SecureOS Landing.html" class="logo">
+        <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+        Secure<span class="red">OS</span>
+      </a>
+      <span class="crumb">
+        <span class="sep">/</span>
+        <span class="here">Security</span>
+      </span>
+    </div>
+    <div class="nav-links">
+      <a href="SecureOS Landing.html#agents">Agents</a>
+      <a href="playground.html">Playground</a>
+      <a href="docs/quickstart.html">Docs</a>
+      <a href="SecureOS Landing.html#pricing">Pricing</a>
+    </div>
+    <a href="https://github.com/Ali2191/vibeguard" target="_blank" rel="noopener" class="btn btn-primary" style="height:34px;font-size:13px;">Connect GitHub</a>
+  </div>
+</nav>
+
+<header class="hero">
+  <div class="hero-glow"></div>
+  <div class="container hero-inner">
+    <div class="hero-eyebrow">
+      <svg width="13" height="13" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/><path d="M9 12l2 2 4-4"/></svg>
+      Security at SecureOS
+    </div>
+    <h1>The company that secures your code holds itself to the same bar.</h1>
+    <p class="lede">
+      We read your repos. We owe you our security posture in return. Here's what we do, what we don't do, and how to reach us if you find a hole.
+    </p>
+    <div class="hero-actions">
+      <a href="#disclosure" class="btn btn-ghost">Report a vulnerability</a>
+      <a href="#" class="btn btn-ghost">Download SOC 2 report</a>
+    </div>
+  </div>
+</header>
+
+<section class="badges">
+  <div class="container badges-grid">
+    <div class="trust-badge">
+      <span class="seal success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M12 2L4 6v6c0 5 3 9 8 10 5-1 8-5 8-10V6l-8-4z"/><path d="M9 12l2 2 4-4"/></svg>
+      </span>
+      SOC 2 Type II
+    </div>
+    <div class="trust-badge">
+      <span class="seal success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 2a14 14 0 010 20M12 2a14 14 0 000 20"/></svg>
+      </span>
+      GDPR ready
+    </div>
+    <div class="trust-badge">
+      <span class="seal success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+      </span>
+      Encrypted at rest
+    </div>
+    <div class="trust-badge">
+      <span class="seal success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><path d="M20 7l-8-4-8 4v6c0 5 3 8 8 10 5-2 8-5 8-10V7z"/></svg>
+      </span>
+      MFA enforced
+    </div>
+    <div class="trust-badge">
+      <span class="seal success">
+        <svg viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.6"><polyline points="22 12 18 12 15 21 9 3 6 12 2 12"/></svg>
+      </span>
+      24/7 monitoring
+    </div>
+  </div>
+</section>
+
+<section class="section">
+  <div class="container">
+    <span class="section-label">Posture</span>
+    <h2>How we handle your code.</h2>
+    <p class="sub">Plain language. Where we made a choice, we'll tell you why.</p>
+
+    <div class="posture-grid">
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><rect x="3" y="11" width="18" height="11" rx="2"/><path d="M7 11V7a5 5 0 0110 0v4"/></svg>
+          </span>
+          <h3>Encryption</h3>
+        </div>
+        <p>Everything in transit and at rest, no exceptions.</p>
+        <ul>
+          <li>TLS 1.3 for all traffic; HSTS preloaded.</li>
+          <li>AES-256-GCM for data at rest.</li>
+          <li>Per-customer encryption keys, rotated quarterly via AWS KMS.</li>
+          <li>Backups encrypted with separate keys, stored in a separate region.</li>
+        </ul>
+        <div class="meta">Verified by SOC 2 Type II auditor · Drata</div>
+      </div>
+
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="8" r="3"/><path d="M21 21v-2a4 4 0 00-4-4H7a4 4 0 00-4 4v2"/></svg>
+          </span>
+          <h3>Access</h3>
+        </div>
+        <p>Least-privilege by default for our team. Audited every change.</p>
+        <ul>
+          <li>SSO + hardware MFA mandatory for everyone, including the founders.</li>
+          <li>Production access requires a written ticket and a second approver.</li>
+          <li>All admin actions logged to an append-only audit trail.</li>
+          <li>Engineers cannot SSH into production. Period.</li>
+        </ul>
+        <div class="meta">Quarterly access review · last completed Apr 2026</div>
+      </div>
+
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M22 11.08V12a10 10 0 11-5.93-9.14"/><path d="M22 4L12 14.01l-3-3"/></svg>
+          </span>
+          <h3>Code handling</h3>
+        </div>
+        <p>Your source is the most sensitive thing we touch. We treat it accordingly.</p>
+        <ul>
+          <li>Scans run in ephemeral, single-tenant containers. Disk wiped after each run.</li>
+          <li>We never persist your source code. We persist findings + line numbers, not the lines themselves.</li>
+          <li>No human at SecureOS reads your code without an explicit support ticket and your written go-ahead.</li>
+        </ul>
+        <div class="meta">Default retention: 0 days for code · 90 days for findings</div>
+      </div>
+
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M12 22s8-4 8-10V5l-8-3-8 3v7c0 6 8 10 8 10z"/></svg>
+          </span>
+          <h3>Infrastructure</h3>
+        </div>
+        <p>Hosted on AWS in <code>us-east-1</code>. Multi-AZ. No third-party CDN sees your code.</p>
+        <ul>
+          <li>Private VPC with no public ingress except the LB.</li>
+          <li>WAF + DDoS protection at the edge.</li>
+          <li>Continuous vulnerability scanning of our own dependencies — yes, we run Sentinel on ourselves.</li>
+          <li>Backups: 30-day point-in-time recovery for the control plane DB.</li>
+        </ul>
+        <div class="meta">Status page: <a href="#" style="color:var(--secondary);">status.secureos.dev</a></div>
+      </div>
+
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><circle cx="12" cy="12" r="9"/><path d="M2 12h20M12 2a14 14 0 010 20M12 2a14 14 0 000 20"/></svg>
+          </span>
+          <h3>Data residency</h3>
+        </div>
+        <p>EU customers can request <code>eu-west-1</code> at no extra cost. Findings never leave your chosen region.</p>
+        <ul>
+          <li>Data export available on demand: JSON, one-click, no support ticket.</li>
+          <li>Account deletion purges all findings within 7 days, backups within 30.</li>
+          <li>GDPR DPA available on the Team plan.</li>
+        </ul>
+        <div class="meta">EU residency adds ~80ms to scan latency · acceptable to most</div>
+      </div>
+
+      <div class="post-card">
+        <div class="post-card-h">
+          <span class="post-icon">
+            <svg width="18" height="18" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="1.7"><path d="M14 2H6a2 2 0 00-2 2v16a2 2 0 002 2h12a2 2 0 002-2V8z"/><path d="M14 2v6h6M9 13h6M9 17h6"/></svg>
+          </span>
+          <h3>Compliance</h3>
+        </div>
+        <p>We get audited so your auditors don't have to ask us 200 questions.</p>
+        <ul>
+          <li>SOC 2 Type II — renewed annually, available under NDA.</li>
+          <li>GDPR controller / processor agreement available on request.</li>
+          <li>HIPAA BAA on the Team plan for healthcare customers.</li>
+          <li>Quarterly third-party penetration test (yes, Penetrator pen-tests us first).</li>
+        </ul>
+        <div class="meta">Next external pen test: Jul 2026</div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <div class="deny-list">
+      <h3>
+        <svg width="20" height="20" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><circle cx="12" cy="12" r="10"/><line x1="4.93" y1="4.93" x2="19.07" y2="19.07"/></svg>
+        What we don't do
+      </h3>
+      <p>Promises by omission are easy. So here's the explicit list.</p>
+      <div class="deny-grid">
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't train ML models on your code.</strong> Sentinel's rulepack is hand-curated. Your repos are not training data.</div>
+        </div>
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't write to your repo without your OK.</strong> Apply-fix requires you to click. No silent commits, ever.</div>
+        </div>
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't store your secrets.</strong> If Sentinel finds a secret, the finding records the location — never the value.</div>
+        </div>
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't sell your data.</strong> No data brokerage, no ad-tech partners, no "anonymized" telemetry sold downstream.</div>
+        </div>
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't ship a third-party CDN with your dashboard.</strong> No Google Analytics, no Segment, no Intercom on app.secureos.dev.</div>
+        </div>
+        <div class="deny-item">
+          <span class="x"><svg width="9" height="9" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="3"><line x1="18" y1="6" x2="6" y2="18"/><line x1="6" y1="6" x2="18" y2="18"/></svg></span>
+          <div class="deny-item-body"><strong>We don't share findings between customers.</strong> Each customer's data lives in a logically isolated tenant.</div>
+        </div>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <span class="section-label">Architecture</span>
+    <h2>What happens when you push code.</h2>
+    <p class="sub">From your git push to the finding in your PR — every hop, every key, where the boundaries are.</p>
+
+    <div class="infra-flow">
+      <div class="infra-h">
+        <h3>Scan data flow</h3>
+        <span class="pill">All hops over TLS 1.3</span>
+      </div>
+      <div class="flow">
+        <div class="flow-node">
+          <div class="flow-node-h">1 · Source</div>
+          <div class="flow-node-thing">Your repo</div>
+          <div class="flow-node-meta">GitHub webhook</div>
+          <svg class="flow-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-h">2 · Ingest</div>
+          <div class="flow-node-thing">Edge router</div>
+          <div class="flow-node-meta">us-east-1 / eu-west-1</div>
+          <svg class="flow-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-node lock">
+          <div class="flow-node-h">3 · Compute</div>
+          <div class="flow-node-thing">Ephemeral container</div>
+          <div class="flow-node-meta">single tenant · ~12s lifetime</div>
+          <svg class="flow-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-h">4 · Findings</div>
+          <div class="flow-node-thing">Encrypted DB</div>
+          <div class="flow-node-meta">AES-256-GCM at rest</div>
+          <svg class="flow-arr" width="14" height="14" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><path d="M5 12h14M13 5l7 7-7 7"/></svg>
+        </div>
+        <div class="flow-node">
+          <div class="flow-node-h">5 · Delivery</div>
+          <div class="flow-node-thing">PR comment + dashboard</div>
+          <div class="flow-node-meta">90-day retention</div>
+        </div>
+      </div>
+      <div class="flow-legend">
+        <span><span class="sw" style="background:rgba(68,204,136,0.18);border:1px solid rgba(68,204,136,0.4);"></span> Single-tenant compute boundary</span>
+        <span><span class="sw" style="background:var(--surface);border:1px solid var(--border);"></span> Multi-tenant control plane</span>
+        <span style="color:var(--muted-2);font-family:var(--font-mono);">Your source: never persisted after step 3</span>
+      </div>
+    </div>
+  </div>
+</section>
+
+<section class="section" style="padding-top:0;">
+  <div class="container">
+    <span class="section-label">FAQ</span>
+    <h2>Questions auditors ask us first.</h2>
+
+    <div class="faq">
+      <details class="faq-q">
+        <summary>Do you store our source code?</summary>
+        <p>No. Scan containers clone, scan, and exit. The container's disk is destroyed on exit. The control-plane database stores findings (file path + line number + rule ID + diff hint), not source code itself.</p>
+      </details>
+      <details class="faq-q">
+        <summary>Do you train models on our repos?</summary>
+        <p>No. Our detection works on hand-written rules, not learned ones. We don't use customer code for any kind of model training, fine-tuning, or evaluation, period.</p>
+      </details>
+      <details class="faq-q">
+        <summary>Where is the data stored, and can I choose?</summary>
+        <p>Default is AWS <code>us-east-1</code> with multi-AZ replication. EU customers can request <code>eu-west-1</code> on any paid plan. Findings stay in your chosen region; backups stay in the same region pair.</p>
+      </details>
+      <details class="faq-q">
+        <summary>What permissions does the GitHub App need?</summary>
+        <p>Read on code, read on metadata, write on pull-request comments. We never request write on code. You can review the exact scopes at <code>github.com/settings/installations</code> and revoke at any time.</p>
+      </details>
+      <details class="faq-q">
+        <summary>What happens if I delete my account?</summary>
+        <p>Findings are purged within 7 days. Backups containing your findings expire within 30 days. We retain account-level metadata (email, plan history) for 12 months for tax purposes only, then drop it.</p>
+      </details>
+      <details class="faq-q">
+        <summary>Can I get a SOC 2 report?</summary>
+        <p>Yes — request it under a one-page NDA. Email <a href="mailto:security@secureos.dev" style="color:var(--success);">security@secureos.dev</a> and we'll send it within one business day.</p>
+      </details>
+      <details class="faq-q">
+        <summary>Have you ever had a breach?</summary>
+        <p>No. If we ever do, we'll tell every affected customer within 72 hours, post a public incident report, and re-issue any compromised credentials. We will not bury it in a tweet.</p>
+      </details>
+    </div>
+  </div>
+</section>
+
+<section class="section" id="disclosure" style="padding-top:0;">
+  <div class="container">
+    <span class="section-label">Responsible disclosure</span>
+    <h2>Found something? Tell us.</h2>
+
+    <div class="disclosure">
+      <div>
+        <h3>Email security@secureos.dev — PGP key on file.</h3>
+        <p>We acknowledge reports within 24 hours and confirm fix or won't-fix within 5 business days. Critical issues get same-day attention. We pay bounties for verified vulnerabilities — typically $250 to $10,000 depending on severity and impact. No legal pursuit of good-faith research.</p>
+        <code class="email">security@secureos.dev</code>
+      </div>
+      <div style="display:flex;flex-direction:column;gap:10px;">
+        <a href="mailto:security@secureos.dev" class="btn btn-primary" style="height:42px;padding:0 18px;">Report a vulnerability</a>
+        <a href="#" class="btn btn-ghost" style="height:42px;padding:0 18px;">View PGP key</a>
+      </div>
+    </div>
+  </div>
+</section>
+
+<footer class="footer">
+  <div class="footer-inner">
+    <a href="SecureOS Landing.html" class="logo">
+      <span class="logo-mark"><svg width="12" height="13" viewBox="0 0 12 13" fill="none"><path d="M6 1L11 3v3.5c0 3-2.2 5.3-5 5.5-2.8-.2-5-2.5-5-5.5V3l5-2z" stroke="#ff4444" stroke-width="1.2" fill="none"/></svg></span>
+      Secure<span class="red">OS</span>
+    </a>
+    <div class="footer-links">
+      <a href="SecureOS Landing.html#agents">Agents</a>
+      <a href="playground.html">Playground</a>
+      <a href="docs/quickstart.html">Docs</a>
+      <a href="changelog.html">Changelog</a>
+    </div>
+    <div class="footer-copy">© 2026 SecureOS · secureos.dev</div>
+  </div>
+</footer>
+
+</body>
+</html>
