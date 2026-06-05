@@ -67,7 +67,9 @@ def _write_license_file(data: dict[str, Any]) -> None:
 def validate_license_token(token: str) -> License:
     try:
         payload = jwt.decode(token, PUBLIC_KEY, algorithms=["RS256"], options={"verify_aud": False})
-    except Exception as e:
+    except jwt.ExpiredSignatureError:
+        raise LicenseError("License token has expired")
+    except jwt.InvalidTokenError as e:
         raise LicenseError(f"Invalid license token: {e}")
 
     required = {"sub", "tier", "exp", "iat"}
