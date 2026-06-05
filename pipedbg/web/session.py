@@ -97,7 +97,7 @@ class PipelineSession:
             "status": self.status,
             "started_at": self.started_at,
             "ended_at": self.ended_at,
-            "jobs": {job_id: job.to_dict() for job_id, job in self.jobs.items()},
+            "jobs": {job_id: job.to_dict() for job_id, job in self.jobs.items() if self.session_id == job_id},
             "breakpoints": sorted(self.breakpoints),
             "current_breakpoint": self.current_breakpoint,
             "share_url": self.share_url,
