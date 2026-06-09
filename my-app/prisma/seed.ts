@@ -5,10 +5,12 @@ const prisma = new PrismaClient();
 
 async function main() {
   const passwordHash = await bcrypt.hash("password123", 10);
+  const ownerEmail = process.env.OWNER_EMAIL;
+  const shopEmail = process.env.SHOP_EMAIL;
   const user = await prisma.user.upsert({
-    where: { email: "owner@demo-shop.com" },
+    where: { email: ownerEmail },
     update: {},
-    create: { email: "owner@demo-shop.com", name: "Demo Owner", passwordHash },
+    create: { email: ownerEmail, name: "Demo Owner", passwordHash },
   });
 
   const shop = await prisma.shop.upsert({
@@ -17,7 +19,7 @@ async function main() {
     create: {
       name: "Demo Fab Shop",
       slug: "demo-fab",
-      email: "quote@demo-fab.quotefast.io",
+      email: shopEmail,
       ownerId: user.id,
       settings: { create: {} },
     },

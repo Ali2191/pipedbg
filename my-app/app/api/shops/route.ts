@@ -13,7 +13,7 @@ export async function POST(req: Request) {
   const formData = await req.formData();
   const name = String(formData.get("name") ?? "").trim();
   const slug = String(formData.get("slug") ?? "").trim().toLowerCase().replace(/[^a-z0-9-]/g, "");
-  const ownerEmail = String(formData.get("ownerEmail") ?? "owner@demo-shop.com").toLowerCase();
+  const ownerEmail = String(formData.get("ownerEmail") ?? process.env.DEFAULT_OWNER_EMAIL).toLowerCase();
 
   if (!name || !slug) return NextResponse.json({ error: "name and slug are required" }, { status: 400 });
 
