@@ -5,7 +5,7 @@ const os = require('os');
 
 let mainWindow;
 let pythonProcess;
-let serverUrl = 'http://127.0.0.1:8765';
+let serverUrl = 'https://127.0.0.1:8765';
 
 // Spawn Python backend server
 function startPythonServer() {
