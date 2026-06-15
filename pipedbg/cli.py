@@ -14,6 +14,7 @@ import urllib
 from datetime import datetime
 from pathlib import Path
 from urllib import request
+from urllib.parse import urlparse
 
 import click
 from rich.console import Console
@@ -181,4 +182,9 @@ def run(
         console.print(f"Available: {', '.join(workflow.jobs.keys())}")
         sys.exit(1)
 
-    r
+    if notify:
+        parsed_url = urlparse(notify)
+        if parsed_url.scheme not in ['http', 'https']:
+            console.print(f"[red bold]Invalid notify URL scheme:[/red bold] {parsed_url.scheme}")
+            sys.exit(1)
+        # rest of your code remains the same
